@@ -26,7 +26,7 @@
 					<li>
 						<a
 							href={resolve('/(store)/c/[categoria]', { categoria: root.slug })}
-							class="inline-flex min-h-9 items-center text-foreground/90 hover:text-gold"
+							class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
 						>
 							{root.nombre}
 						</a>
@@ -35,7 +35,7 @@
 				<li>
 					<a
 						href={resolve('/(store)/colecciones')}
-						class="inline-flex min-h-9 items-center text-foreground/90 hover:text-gold"
+						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
 					>
 						Colecciones
 					</a>
@@ -50,7 +50,7 @@
 				<li>
 					<ExternalLink
 						href={whatsappHref}
-						class="inline-flex min-h-9 items-center text-foreground/90 hover:text-gold"
+						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
 					>
 						WhatsApp
 					</ExternalLink>
@@ -58,7 +58,7 @@
 				<li>
 					<a
 						href={resolve('/(store)/favoritos')}
-						class="inline-flex min-h-9 items-center text-foreground/90 hover:text-gold"
+						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
 					>
 						Mis favoritos
 					</a>

@@ -5,7 +5,9 @@
 	import Heart from '@lucide/svelte/icons/heart';
 	import Menu from '@lucide/svelte/icons/menu';
 	import Search from '@lucide/svelte/icons/search';
+	import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
+	import { cart } from '#lib/stores/cart.svelte.js';
 	import { favorites } from '#lib/stores/favorites.svelte.js';
 	import { cn } from '#lib/utils.js';
 	import Panel from './Panel.svelte';
@@ -17,7 +19,10 @@
 
 	let menuOpen = $state(false);
 
-	$effect(() => favorites.load());
+	$effect(() => {
+		favorites.load();
+		cart.load();
+	});
 
 	/** Root category the current page belongs to, to highlight it. */
 	const activeRoot = $derived.by(() => {
@@ -77,6 +82,20 @@
 						</a>
 					</li>
 				{/each}
+				<li>
+					<a
+						href={resolve('/(store)/colecciones')}
+						aria-current={page.route.id?.startsWith('/(store)/colecciones') ? 'page' : undefined}
+						class={cn(
+							'inline-flex min-h-11 items-center rounded-md px-3 text-sm transition-colors',
+							page.route.id?.startsWith('/(store)/colecciones')
+								? 'text-gold'
+								: 'text-muted-foreground hover:text-foreground'
+						)}
+					>
+						Colecciones
+					</a>
+				</li>
 			</ul>
 		</nav>
 
@@ -94,7 +113,7 @@
 					type="search"
 					placeholder="Buscar"
 					value={page.url.pathname === '/buscar' ? (page.url.searchParams.get('q') ?? '') : ''}
-					class="h-10 w-48 rounded-full border border-border bg-surface pr-3 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
+					class="h-11 w-48 rounded-full border border-border bg-surface pr-3 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
 				/>
 			</form>
 			<a
@@ -119,6 +138,21 @@
 					</span>
 				{/if}
 			</a>
+			<a
+				href={resolve('/(store)/carrito')}
+				class={iconButton}
+				aria-label="Carrito{cart.count ? ` (${cart.count})` : ''}"
+			>
+				<ShoppingBag size={20} stroke-width={1.75} />
+				{#if cart.count}
+					<span
+						class="absolute top-1 right-1 grid min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] leading-4 font-semibold text-primary-foreground tabular-nums"
+						aria-hidden="true"
+					>
+						{cart.count > 99 ? '99+' : cart.count}
+					</span>
+				{/if}
+			</a>
 			<ExternalLink
 				href={encargosHref}
 				class="ml-1 hidden min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light md:inline-flex"
@@ -132,13 +166,13 @@
 
 <Panel bind:open={menuOpen} title="Menú" side="left">
 	<nav aria-label="Categorías">
-		<ul class="flex flex-col gap-5">
+		<ul class="flex flex-col gap-3">
 			{#each categories as root (root.id)}
 				<li>
 					<a
 						href={resolve('/(store)/c/[categoria]', { categoria: root.slug })}
 						onclick={() => (menuOpen = false)}
-						class="font-display text-base text-foreground hover:text-gold"
+						class="flex min-h-11 items-center font-display text-base text-foreground hover:text-gold"
 					>
 						{root.nombre}
 					</a>
@@ -163,7 +197,7 @@
 				<a
 					href={resolve('/(store)/colecciones')}
 					onclick={() => (menuOpen = false)}
-					class="font-display text-base text-foreground hover:text-gold"
+					class="flex min-h-11 items-center font-display text-base text-foreground hover:text-gold"
 				>
 					Colecciones
 				</a>

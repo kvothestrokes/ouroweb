@@ -19,7 +19,7 @@
 	const hidden = $derived(colors.length - visible.length);
 </script>
 
-<ul class={cn('flex flex-wrap items-center', size === 'sm' ? 'gap-0.5' : 'gap-2')}>
+<ul class={cn('flex flex-wrap items-center', size === 'sm' ? '-mx-3' : 'gap-2')}>
 	{#each visible as color (color.key)}
 		{@const active = color.key === selected}
 		<li>
@@ -32,11 +32,11 @@
 				onpointerenter={(event) => {
 					if (previewOnHover && event.pointerType === 'mouse') onselect(color.key);
 				}}
-				class={cn('grid place-items-center rounded-full', size === 'sm' ? 'size-8' : 'size-11')}
+				class={cn('grid place-items-center rounded-full', 'size-11')}
 			>
 				<span
 					class={cn(
-						'block rounded-full border border-border transition-shadow',
+						'block rounded-full border border-foreground/30 transition-shadow',
 						size === 'sm' ? 'size-5' : 'size-8',
 						active && 'ring-2 ring-gold ring-offset-2 ring-offset-background'
 					)}

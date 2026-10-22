@@ -192,9 +192,9 @@ export function imageSrcset(image: ProductImage): string {
 	return IMAGE_WIDTHS.map((width) => `${imageUrl(image, width)} ${width}w`).join(', ');
 }
 
-export type StoreCategory = CategoryRow & { imagen_hero: string | null };
+export type StoreCategory = CategoryRow;
 export type StoreCategoryTree = (StoreCategory & { children: StoreCategory[] })[];
-export type StoreCollection = { id: string; slug: string; nombre: string; imagen: string | null };
+export type StoreCollection = { id: string; slug: string; nombre: string };
 
 /**
  * Facets for the filter panel, from the products being shown. Sizes keep the garment

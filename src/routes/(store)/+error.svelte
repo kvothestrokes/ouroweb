@@ -15,7 +15,9 @@
 	<p class="text-muted-foreground">
 		{page.status === 404
 			? 'Puede que el producto ya no esté disponible o que el enlace haya cambiado.'
-			: (page.error?.message ?? 'Intenta de nuevo en unos minutos.')}
+			: page.status === 503
+				? (page.error?.message ?? 'Intenta de nuevo en unos minutos.')
+				: 'Intenta de nuevo en unos minutos.'}
 	</p>
 	<div class="mt-2 flex flex-wrap justify-center gap-3">
 		<a

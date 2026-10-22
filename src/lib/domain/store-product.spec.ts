@@ -181,8 +181,7 @@ describe('findCategory', () => {
 		parent_id,
 		es_estrella: false,
 		orden: 0,
-		activo: true,
-		imagen_hero: null
+		activo: true
 	});
 	const tree = [
 		{

@@ -19,7 +19,7 @@
 	class="relative isolate overflow-hidden rounded-2xl border border-border bg-surface md:grid md:min-h-80 md:grid-cols-2"
 >
 	<div
-		class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,var(--color-purple)/25%,transparent_60%)]"
+		class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklab,var(--color-purple)_25%,transparent),transparent_60%)]"
 		aria-hidden="true"
 	></div>
 	<div class="flex flex-col justify-center gap-3 p-6 md:p-10">

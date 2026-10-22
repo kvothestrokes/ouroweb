@@ -34,7 +34,7 @@
 		{#if !isRoot}
 			<a
 				href={resolve('/(store)/c/[categoria]', { categoria: data.root.slug })}
-				class="w-fit text-sm text-muted-foreground hover:text-foreground"
+				class="inline-flex min-h-11 w-fit items-center text-sm text-muted-foreground hover:text-foreground"
 			>
 				{data.root.nombre}
 			</a>

@@ -53,8 +53,17 @@ const PRIVATE_TABLES = [
 ];
 
 // Public tables: anon can read.
+// Tables where anon only gets some columns (paths and design ids stay private).
+const PUBLIC_COLUMNS = {
+	products:
+		'id, slug, nombre, descripcion, category_id, tipo_imagen, garment_type_id, precio_base, modo_stock, permite_personalizar, activo, destacado, created_at, updated_at',
+	product_images: 'id, product_id, orden, created_at'
+};
 for (const table of PUBLIC_TABLES) {
-	const { error } = await anon.from(table).select('*').limit(1);
+	const { error } = await anon
+		.from(table)
+		.select(PUBLIC_COLUMNS[table] ?? '*')
+		.limit(1);
 	check(`anon reads ${table}`, !error, error?.message);
 }
 
@@ -442,6 +451,73 @@ for (const table of PRIVATE_TABLES) {
 }
 
 // Seed is present.
+// Private columns of public tables: original photo paths and design ids.
+{
+	const { error: designError } = await anon.from('products').select('design_id').limit(1);
+	check('anon cannot read products.design_id', Boolean(designError), designError?.code);
+	const { error: pathError } = await anon.from('product_images').select('imagekit_path').limit(1);
+	check('anon cannot read product_images.imagekit_path', Boolean(pathError), pathError?.code);
+}
+
+// Active products inside a hidden category (or under a hidden root) are hidden too.
+{
+	await admin.from('products').delete().like('slug', 'smoke-oculto-%');
+	await admin.from('categories').delete().eq('slug', 'smoke-raiz-oculta-sub');
+	await admin.from('categories').delete().like('slug', 'smoke-raiz-oculta%');
+	const { data: root } = await admin
+		.from('categories')
+		.insert({ slug: 'smoke-raiz-oculta', nombre: 'Smoke raíz', activo: false })
+		.select('id')
+		.single();
+	const { data: sub } = await admin
+		.from('categories')
+		.insert({
+			slug: 'smoke-raiz-oculta-sub',
+			nombre: 'Smoke sub',
+			parent_id: root?.id,
+			activo: true
+		})
+		.select('id')
+		.single();
+	const { data: products, error } = await admin
+		.from('products')
+		.insert([
+			{
+				slug: 'smoke-oculto-raiz',
+				nombre: 'Smoke',
+				category_id: root?.id,
+				tipo_imagen: 'foto',
+				precio_base: 100,
+				activo: true
+			},
+			{
+				slug: 'smoke-oculto-sub',
+				nombre: 'Smoke',
+				category_id: sub?.id,
+				tipo_imagen: 'foto',
+				precio_base: 100,
+				activo: true
+			}
+		])
+		.select('id');
+	check('secret key inserts active products in hidden categories', !error, error?.message);
+	const { data: visible } = await anon
+		.from('products')
+		.select('slug')
+		.in(
+			'id',
+			(products ?? []).map((product) => product.id)
+		);
+	check(
+		'anon does not see products of a hidden category',
+		visible?.length === 0,
+		JSON.stringify(visible)
+	);
+	await admin.from('products').delete().like('slug', 'smoke-oculto-%');
+	await admin.from('categories').delete().eq('slug', 'smoke-raiz-oculta-sub');
+	await admin.from('categories').delete().eq('slug', 'smoke-raiz-oculta');
+}
+
 {
 	const { count: categories } = await admin
 		.from('categories')

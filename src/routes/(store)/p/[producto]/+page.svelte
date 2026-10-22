@@ -67,8 +67,12 @@
 	);
 	const soldOut = $derived(isGarment && !product.bajoPedido && sizes.length === 0);
 
+	/** The typed quantity, kept valid while the field is being edited. */
+	const qty = $derived(
+		Number.isInteger(cantidad) && cantidad >= 1 ? Math.min(MAX_QUANTITY, cantidad) : 1
+	);
 	const selection = $derived(
-		JSON.stringify([product.slug, color, talla, cantidad, personalizar, texto])
+		JSON.stringify([product.slug, color, talla, qty, personalizar, texto])
 	);
 	const added = $derived(addedSelection === selection);
 
@@ -81,7 +85,7 @@
 			slug: product.slug,
 			color: product.tipoImagen === 'mockup' || product.colores.length ? color : null,
 			talla: isGarment ? talla : null,
-			cantidad,
+			cantidad: qty,
 			personalizacion: personalizar && texto.trim() ? texto.trim().slice(0, 500) : null
 		});
 		addedSelection = selection;
@@ -102,13 +106,18 @@
 <div class="mx-auto max-w-7xl px-4 pt-6 pb-32 md:px-6 md:pt-10 lg:pb-10">
 	<nav aria-label="Ruta" class="mb-6 text-sm text-muted-foreground">
 		<ol class="flex flex-wrap items-center gap-1.5">
-			<li><a href={resolve('/(store)')} class="hover:text-foreground">Inicio</a></li>
+			<li>
+				<a
+					href={resolve('/(store)')}
+					class="inline-flex min-h-11 items-center hover:text-foreground">Inicio</a
+				>
+			</li>
 			{#if data.root}
 				<li aria-hidden="true">/</li>
 				<li>
 					<a
 						href={resolve('/(store)/c/[categoria]', { categoria: data.root.slug })}
-						class="hover:text-foreground">{data.root.nombre}</a
+						class="inline-flex min-h-11 items-center hover:text-foreground">{data.root.nombre}</a
 					>
 				</li>
 			{/if}
@@ -116,7 +125,7 @@
 			<li>
 				<a
 					href={resolve('/(store)/c/[categoria]', { categoria: data.category.slug })}
-					class="hover:text-foreground">{data.category.nombre}</a
+					class="inline-flex min-h-11 items-center hover:text-foreground">{data.category.nombre}</a
 				>
 			</li>
 		</ol>
@@ -205,11 +214,11 @@
 				{/if}
 
 				{#if isGarment}
-					<fieldset class="flex flex-col gap-2">
-						<div class="mb-2 flex items-center justify-between gap-3">
-							<legend class="text-sm">
-								Talla: <span class="text-muted-foreground">{talla ?? 'elige una'}</span>
-							</legend>
+					<fieldset class="relative flex flex-col gap-2">
+						<legend class="mb-2 flex min-h-11 items-center text-sm">
+							Talla: <span class="ml-1 text-muted-foreground">{talla ?? 'elige una'}</span>
+						</legend>
+						<div class="absolute top-0 right-0">
 							<SizeGuide
 								guide={product.guiaTallas}
 								sizes={product.todasLasTallas}
@@ -376,17 +385,17 @@
 
 <!-- Mobile buy bar -->
 <div
-	class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur-md lg:hidden"
+	class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden"
 >
 	<div class="mx-auto flex max-w-xl items-center gap-3">
 		<div class="min-w-0 flex-1">
 			<p class="truncate text-xs text-muted-foreground">
-				{[colorName, talla ? `Talla ${talla}` : null, cantidad > 1 ? `${cantidad} pzas` : null]
+				{[colorName, talla ? `Talla ${talla}` : null, qty > 1 ? `${qty} pzas` : null]
 					.filter(Boolean)
 					.join(' · ') || product.nombre}
 			</p>
 			<p class="font-semibold text-gold tabular-nums">
-				{unitPrice !== null ? formatMoney(unitPrice * cantidad) : 'Por cotizar'}
+				{unitPrice !== null ? formatMoney(unitPrice * qty) : 'Por cotizar'}
 			</p>
 		</div>
 		<div class="flex-[1.4]">{@render addButton(true)}</div>
@@ -397,22 +406,32 @@
 	{#if showErrors && missing.length && compact}
 		<p class="sr-only" role="alert">Elige {missing.join(' y ')}.</p>
 	{/if}
-	<button
-		type="button"
-		onclick={addToCart}
-		disabled={soldOut}
-		class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
-	>
-		{#if added}
+	{#if compact && added}
+		<a
+			href={resolve('/(store)/carrito')}
+			class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light"
+		>
 			<Check size={18} stroke-width={1.75} />
-			{compact ? 'Agregado' : 'Agregado al carrito'}
-		{:else}
-			<ShoppingBag size={18} stroke-width={1.75} />
-			{compact && missing.length
-				? `Elige ${missing[0].replace(/^una? /, '')}`
-				: 'Agregar al carrito'}
-		{/if}
-	</button>
+			Ver carrito
+		</a>
+	{:else}
+		<button
+			type="button"
+			onclick={addToCart}
+			disabled={soldOut}
+			class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
+		>
+			{#if added}
+				<Check size={18} stroke-width={1.75} />
+				{compact ? 'Agregado' : 'Agregado al carrito'}
+			{:else}
+				<ShoppingBag size={18} stroke-width={1.75} />
+				{compact && missing.length
+					? `Elige ${missing[0].replace(/^una? /, '')}`
+					: 'Agregar al carrito'}
+			{/if}
+		</button>
+	{/if}
 	{#if !compact}
 		<div aria-live="polite" class="min-h-5 text-sm">
 			{#if added}

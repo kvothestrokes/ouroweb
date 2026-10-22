@@ -45,8 +45,8 @@
 			</tbody>
 		</table>
 		<p class="mt-4 text-xs text-muted-foreground">
-			Mide de axila a axila (ancho) y del hombro al borde inferior (largo) una playera que te quede
-			bien y compárala con la tabla.
+			Mide de axila a axila (ancho) y del hombro al borde inferior (largo) una
+			{garment.toLowerCase()} que te quede bien y compárala con la tabla.
 		</p>
 	{:else}
 		<!-- TODO(negocio): medidas reales de la guía de tallas (spec, sección 13). -->

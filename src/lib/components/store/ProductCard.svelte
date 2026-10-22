@@ -65,7 +65,7 @@
 				selected={color}
 				onselect={(key) => (picked = key)}
 				previewOnHover
-				max={6}
+				max={3}
 			/>
 		{/if}
 		<a

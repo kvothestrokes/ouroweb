@@ -21,7 +21,7 @@
 	<header class="flex flex-col gap-1">
 		<a
 			href={resolve('/(store)/colecciones')}
-			class="w-fit text-sm text-muted-foreground hover:text-foreground"
+			class="inline-flex min-h-11 w-fit items-center text-sm text-muted-foreground hover:text-foreground"
 		>
 			Colecciones
 		</a>
@@ -38,7 +38,17 @@
 		>
 			<ProductGrid products={data.products} preferredColors={data.filters.colores}>
 				{#snippet empty()}
-					<EmptyState title="Nada con esos filtros">Prueba quitando alguno.</EmptyState>
+					<EmptyState title="Nada con esos filtros">
+						Prueba quitando alguno.
+						{#snippet action()}
+							<a
+								href={resolve('/(store)/colecciones/[slug]', { slug: data.collection.slug })}
+								class="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm hover:bg-surface-raised"
+							>
+								Quitar filtros
+							</a>
+						{/snippet}
+					</EmptyState>
 				{/snippet}
 			</ProductGrid>
 		</CatalogFilters>

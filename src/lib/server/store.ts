@@ -46,7 +46,7 @@ export async function loadCategoryTree(): Promise<StoreCategoryTree> {
 	const rows = unwrap(
 		await db
 			.from('categories')
-			.select('id, slug, nombre, parent_id, es_estrella, orden, activo, imagen_hero')
+			.select('id, slug, nombre, parent_id, es_estrella, orden, activo')
 			.order('orden')
 			.order('nombre')
 	);
@@ -78,10 +78,23 @@ export async function loadProductDetail(slug: string): Promise<ProductDetail | n
 }
 
 export async function loadCollections(): Promise<StoreCollection[]> {
-	return unwrap(await db.from('collections').select('id, slug, nombre, imagen').order('nombre'));
+	return unwrap(await db.from('collections').select('id, slug, nombre').order('nombre'));
 }
 
-/** Short CDN cache for public pages; favorites and cart live in the browser. */
+/**
+ * True when the public can see the product (active, in visible categories). Image
+ * endpoints read with the secret key, so they ask RLS through this anonymous client.
+ */
+export async function isPublicProduct(id: string): Promise<boolean> {
+	const { data } = await db.from('products').select('id').eq('id', id).maybeSingle();
+	return Boolean(data);
+}
+
+/**
+ * Short CDN cache for public pages. Store loads must never touch the visitor's session
+ * (`locals.supabase.auth`, `locals.getAdmin()`): a refreshed cookie would end up in a
+ * response the CDN shares with everyone. Favorites and cart live in the browser.
+ */
 export const STORE_PAGE_HEADERS = {
 	'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
 };
