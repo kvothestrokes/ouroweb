@@ -7,6 +7,7 @@ import {
 	Palette,
 	Ruler,
 	Shirt,
+	Sparkles,
 	ShoppingBag,
 	Tags
 } from '@lucide/svelte';
@@ -55,6 +56,12 @@ export const NAV: NavItem[] = [
 		label: 'Tallas y precios',
 		icon: Ruler,
 		route: '/admin/(panel)/tipos-de-prenda'
+	},
+	{
+		path: '/admin/tipos-de-encargo',
+		label: 'Tipos de encargo',
+		icon: Sparkles,
+		route: '/admin/(panel)/tipos-de-encargo'
 	},
 	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers }
 ];

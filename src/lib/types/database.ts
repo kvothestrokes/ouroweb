@@ -976,10 +976,15 @@ export type Database = {
 		};
 		Functions: {
 			category_is_public: { Args: { p_category_id: string }; Returns: boolean };
+			create_custom_order: {
+				Args: { p_fecha?: string; p_order: Json; p_request: Json };
+				Returns: string;
+			};
 			create_order: {
 				Args: { p_fecha?: string; p_items: Json; p_order: Json };
 				Returns: string;
 			};
+			guard_new_order: { Args: { p_whatsapp: string }; Returns: undefined };
 			is_admin: { Args: never; Returns: boolean };
 			next_folio: {
 				Args: { p_fecha?: string; p_prefijo?: string };

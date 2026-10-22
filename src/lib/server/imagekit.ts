@@ -86,11 +86,14 @@ export function mockupUrl(options: MockupOptions): string {
  * private folders are only reachable through signed URLs. Returns the stored
  * `filePath`, which is what the database keeps (never the full URL).
  */
-export async function uploadImage(file: File, folder: Folder): Promise<string> {
+export async function uploadImage(file: File, folder: Folder, subfolder?: string): Promise<string> {
+	if (subfolder !== undefined && !/^[A-Za-z0-9-]{1,40}$/.test(subfolder)) {
+		throw new Error(`Invalid ImageKit subfolder: ${subfolder}`);
+	}
 	const result = await client.files.upload({
 		file: await toFile(file, file.name),
 		fileName: file.name,
-		folder: FOLDERS[folder],
+		folder: subfolder ? `${FOLDERS[folder]}/${subfolder}` : FOLDERS[folder],
 		useUniqueFileName: true,
 		isPrivateFile: PRIVATE_FOLDERS.has(folder)
 	});

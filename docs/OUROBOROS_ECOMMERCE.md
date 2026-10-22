@@ -68,6 +68,7 @@ El cliente puede **pedir productos del catálogo** o **solicitar encargos especi
 | Mayoreo de prenda                         | Si las piezas de un mismo tipo de prenda (productos que heredan su precio) llegan a `mayoreo_cantidad_min`, la diferencia con `precio_mayoreo` va en `desc_mayoreo`; la partida guarda el precio normal                                                                                                                                                                        |
 | Stock al pedir                            | El pedido valida que haya piezas, pero no las descuenta: se descuentan a mano cuando el pedido se confirma (Fase 6)                                                                                                                                                                                                                                                            |
 | Envío al recoger                          | `envio = 0` al recoger en taller; domicilio y paquetería quedan "por cotizar" (`null`)                                                                                                                                                                                                                                                                                         |
+| Encargos especiales                       | `/encargos` (acción de formulario multiparte): hasta 3 imágenes de referencia, reducidas en el navegador a 1600 px y re-codificadas en el servidor a WebP sin metadatos, en la carpeta privada `/ouroboros/orders/<folio>/`. `create_custom_order` crea el pedido tipo `encargo` con subtotal 0 ("por cotizar") y comparte con `create_order` los topes de `guard_new_order`   |
 
 ---
 
@@ -460,13 +461,13 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 - [x] Generación de folio
 - [x] Pantalla de éxito con enlace `wa.me` y mensaje `pedido_nuevo`
 
-### Fase 5 — Encargos especiales 🟡
+### Fase 5 — Encargos especiales ✅
 
-- [ ] Admin: tipos de encargo con "desde $X"
-- [ ] Formulario de encargo con subida de referencias
-- [ ] Creación de pedido tipo encargo y mensaje `encargo_nuevo`
+- [x] Admin: tipos de encargo con "desde $X"
+- [x] Formulario de encargo con subida de referencias
+- [x] Creación de pedido tipo encargo y mensaje `encargo_nuevo`
 
-### Fase 6 — Admin: pedidos ⬜
+### Fase 6 — Admin: pedidos 🟡
 
 - [ ] Lista de pedidos con filtros, búsqueda y tiempo real
 - [ ] Detalle: captura de cotización y anticipo requerido
@@ -540,3 +541,4 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 | 2026-10-22 | Fase 3     | ✅ Correcciones de las revisiones de seguridad y UI                                                                                                                            | Migración `tienda_publica`: `anon` ya no lee `products.design_id` ni `product_images.imagekit_path`, y un producto solo es público si su categoría y la categoría padre están activas (`db:smoke` con 3 pruebas nuevas). Imágenes: solo `w` y `v`, y `v` debe ser la versión vigente (si no, 308); caché de CDN de 7 días. UI: carrito con contador en el header, Colecciones en el menú de escritorio, áreas táctiles de 44 px, `legend` de tallas, área segura del iPhone y acciones en estados vacíos                                                                                                                                                                                                              |
 | 2026-10-22 | Fase 4     | ✅ Carrito, checkout, endpoint de pedidos con folio y pantalla de éxito con WhatsApp                                                                                           | Migración `crear_pedido` (`db:smoke` +5 pruebas). Probado de punta a punta en el navegador: tope de stock en el carrito, errores de nombre y dirección, pedido `OUR-2610-0001` con snapshot, envío 0 al recoger y evento inicial; mensaje `pedido_nuevo` correcto. El pedido y el contador de prueba se borraron                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 2026-10-22 | Fase 4     | ✅ Correcciones de la revisión de seguridad                                                                                                                                    | Migración `limites_pedidos`: `create_order` se serializa con un candado transaccional y limita los pedidos pendientes a 60 por hora y 300 por día en toda la tienda (además de 5 por WhatsApp), para que números inventados no agoten los 9999 folios del mes. Texto libre sin caracteres de control ni bidi, nombre y personalización en una línea; personalización solo en productos que la permiten; cuerpo leído con tope real de 32 KB. Pendiente: Turnstile o límite por IP durable si llega spam real, y `seguimientoUrl` en la respuesta cuando exista `/seguimiento` (Fase 7)                                                                                                                                |
+| 2026-10-22 | Fase 5     | ✅ Tipos de encargo en el admin, formulario `/encargos` con referencias y pedido tipo encargo con mensaje `encargo_nuevo`                                                      | Migración `encargos` (`db:smoke` +4 pruebas). Probado en el navegador: encargo `OUR-2610-0001` con 1 referencia (privada: 403 sin firma) y mensaje correcto; pedido, archivos, contador y tipos demo borrados. Los botones "Encargos especiales" ya llevan a `/encargos`. La pantalla del admin no se probó en el navegador (requiere la contraseña del admin)                                                                                                                                                                                                                                                                                                                                                        |

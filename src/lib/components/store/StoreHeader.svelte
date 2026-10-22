@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ExternalLink from '#lib/components/store/ExternalLink.svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Heart from '@lucide/svelte/icons/heart';
@@ -13,9 +12,9 @@
 	import Panel from './Panel.svelte';
 	import type { StoreCategoryTree } from '#lib/domain/store-product.js';
 
-	type Props = { categories: StoreCategoryTree; encargosHref: string };
+	type Props = { categories: StoreCategoryTree };
 
-	let { categories, encargosHref }: Props = $props();
+	let { categories }: Props = $props();
 
 	let menuOpen = $state(false);
 
@@ -153,13 +152,13 @@
 					</span>
 				{/if}
 			</a>
-			<ExternalLink
-				href={encargosHref}
+			<a
+				href={resolve('/(store)/encargos')}
 				class="ml-1 hidden min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light md:inline-flex"
 			>
 				<Sparkles size={16} stroke-width={1.75} />
 				Encargos especiales
-			</ExternalLink>
+			</a>
 		</div>
 	</div>
 </header>
@@ -205,12 +204,13 @@
 		</ul>
 	</nav>
 	{#snippet footer()}
-		<ExternalLink
-			href={encargosHref}
+		<a
+			href={resolve('/(store)/encargos')}
+			onclick={() => (menuOpen = false)}
 			class="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-gold-light"
 		>
 			<Sparkles size={16} stroke-width={1.75} />
 			Encargos especiales
-		</ExternalLink>
+		</a>
 	{/snippet}
 </Panel>

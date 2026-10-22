@@ -67,38 +67,34 @@ const itemSchema = z.object({
 
 export type CheckoutItem = z.infer<typeof itemSchema>;
 
-export type Checkout = {
+/** Who orders and how it is delivered (shared by checkout and special requests). */
+export type Contact = {
 	nombre: string;
 	/** `52XXXXXXXXXX`. */
 	whatsapp: string;
 	metodoEntrega: DeliveryMethod;
 	direccion: Address | null;
 	notas: string;
-	items: CheckoutItem[];
 };
 
-const schema = z.object({
+export type Checkout = Contact & { items: CheckoutItem[] };
+
+const contactSchema = z.object({
 	nombre: text(80),
 	whatsapp: z.string().max(30),
 	metodoEntrega: z.enum(['recoger', 'domicilio', 'paqueteria']),
 	direccion: z.unknown().optional(),
-	notas: text(500, { multiline: true }).default(''),
-	items: z.array(z.unknown()).max(MAX_ITEMS)
+	notas: text(500, { multiline: true }).default('')
 });
 
-/** Validates the checkout payload sent by the browser (spec 6.1, step 3). */
-export function parseCheckout(input: unknown): FormResult<Checkout> {
-	const base = schema.safeParse(input);
-	if (!base.success) return { ok: false, message: 'Revisa los datos de tu pedido.' };
+export function parseContact(input: unknown): FormResult<Contact> {
+	const base = contactSchema.safeParse(input);
+	if (!base.success) return { ok: false, message: 'Revisa tus datos de contacto y entrega.' };
 	const data = base.data;
 
 	if (!data.nombre) return { ok: false, message: 'Escribe tu nombre.' };
 	const whatsapp = normalizeMxPhone(data.whatsapp);
 	if (!whatsapp) return { ok: false, message: 'Escribe tu WhatsApp a 10 dígitos.' };
-	if (!data.items.length) return { ok: false, message: 'Tu carrito está vacío.' };
-
-	const items = z.array(itemSchema).safeParse(data.items);
-	if (!items.success) return { ok: false, message: 'Revisa los productos de tu carrito.' };
 
 	let direccion: Address | null = null;
 	if (data.metodoEntrega !== 'recoger') {
@@ -106,7 +102,6 @@ export function parseCheckout(input: unknown): FormResult<Checkout> {
 		if (!address.success) return { ok: false, message: 'Completa tu dirección de entrega.' };
 		direccion = address.data;
 	}
-
 	return {
 		ok: true,
 		value: {
@@ -114,8 +109,27 @@ export function parseCheckout(input: unknown): FormResult<Checkout> {
 			whatsapp,
 			metodoEntrega: data.metodoEntrega,
 			direccion,
-			notas: data.notas,
-			items: items.data
+			notas: data.notas
 		}
 	};
+}
+
+const itemsSchema = z.object({ items: z.array(z.unknown()).max(MAX_ITEMS) });
+
+/** Validates the checkout payload sent by the browser (spec 6.1, step 3). */
+export function parseCheckout(input: unknown): FormResult<Checkout> {
+	const contact = parseContact(input);
+	if (!contact.ok) {
+		return contact.message === 'Revisa tus datos de contacto y entrega.'
+			? { ok: false, message: 'Revisa los datos de tu pedido.' }
+			: contact;
+	}
+	const list = itemsSchema.safeParse(input);
+	if (!list.success) return { ok: false, message: 'Revisa los datos de tu pedido.' };
+	if (!list.data.items.length) return { ok: false, message: 'Tu carrito está vacío.' };
+
+	const items = z.array(itemSchema).safeParse(list.data.items);
+	if (!items.success) return { ok: false, message: 'Revisa los productos de tu carrito.' };
+
+	return { ok: true, value: { ...contact.value, items: items.data } };
 }

@@ -579,6 +579,78 @@ for (const table of PRIVATE_TABLES) {
 	await cleanup();
 }
 
+// create_custom_order: special requests are orders of type "encargo" (Fase 5).
+{
+	const fecha = '2099-04-10T12:00:00Z';
+	const cleanup = async () => {
+		await admin.from('orders').delete().like('folio', 'OUR-9904-%');
+		await admin.from('folio_counters').delete().eq('periodo', '9904');
+	};
+	await cleanup();
+	const order = {
+		cliente_nombre: 'Smoke',
+		cliente_whatsapp: '520000000002',
+		metodo_entrega: 'paqueteria',
+		direccion: {
+			calle: 'X 1',
+			colonia: 'Centro',
+			cp: '29000',
+			ciudad: 'Tuxtla',
+			estado: 'Chiapas',
+			referencias: ''
+		},
+		notas_cliente: ''
+	};
+	const request = {
+		custom_request_type_id: null,
+		descripcion: 'Termo con mi nombre',
+		cantidad: 3,
+		fecha_deseada: '2099-05-01'
+	};
+	const { error: anonError } = await anon.rpc('create_custom_order', {
+		p_order: order,
+		p_request: request,
+		p_fecha: fecha
+	});
+	check('anon cannot call create_custom_order', Boolean(anonError), anonError?.code);
+
+	const { data: folio, error } = await admin.rpc('create_custom_order', {
+		p_order: order,
+		p_request: request,
+		p_fecha: fecha
+	});
+	check(
+		'create_custom_order returns the folio',
+		folio === 'OUR-9904-0001',
+		error?.message ?? folio
+	);
+	const { data: saved } = await admin
+		.from('orders')
+		.select(
+			'tipo, estado, subtotal, envio, total, custom_requests(descripcion, cantidad, precio_final), order_events(estado)'
+		)
+		.eq('folio', 'OUR-9904-0001')
+		.maybeSingle();
+	check(
+		'create_custom_order saves an encargo to be quoted',
+		saved?.tipo === 'encargo' &&
+			saved.subtotal === 0 &&
+			saved.envio === null &&
+			saved.total === 0 &&
+			saved.custom_requests?.cantidad === 3 &&
+			saved.custom_requests.precio_final === null &&
+			saved.order_events[0]?.estado === 'pendiente',
+		JSON.stringify(saved)
+	);
+	const { error: emptyError } = await admin.rpc('create_custom_order', {
+		p_order: order,
+		p_request: { ...request, descripcion: ' ' },
+		p_fecha: fecha
+	});
+	check('create_custom_order requires a description', Boolean(emptyError), emptyError?.code);
+	await cleanup();
+}
+
 // Private columns of public tables: original photo paths and design ids.
 {
 	const { error: designError } = await anon.from('products').select('design_id').limit(1);

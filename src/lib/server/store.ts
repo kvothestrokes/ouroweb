@@ -88,6 +88,15 @@ export async function loadCollections(): Promise<StoreCollection[]> {
 	return unwrap(await db.from('collections').select('id, slug, nombre').order('nombre'));
 }
 
+export type StoreRequestType = { id: string; nombre: string; precio_desde: number | null };
+
+/** Visible special request types (spec 6.2), by name. */
+export async function loadCustomRequestTypes(): Promise<StoreRequestType[]> {
+	return unwrap(
+		await db.from('custom_request_types').select('id, nombre, precio_desde').order('nombre')
+	);
+}
+
 /**
  * True when the public can see the product (active, in visible categories). Image
  * endpoints read with the secret key, so they ask RLS through this anonymous client.

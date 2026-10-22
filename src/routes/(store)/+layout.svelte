@@ -7,12 +7,6 @@
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
-
-	// TODO(Fase 5): point to the /encargos form once it exists.
-	const encargosHref = whatsappLink(
-		PUBLIC_WHATSAPP_NUMBER,
-		'Hola, quiero cotizar un encargo especial.'
-	);
 </script>
 
 {#if navigating.to}
@@ -31,7 +25,7 @@
 </a>
 
 <div class="flex min-h-dvh flex-col">
-	<StoreHeader categories={data.categories} {encargosHref} />
+	<StoreHeader categories={data.categories} />
 	<main id="contenido" class="flex-1">
 		{@render children()}
 	</main>

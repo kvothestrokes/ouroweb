@@ -10,11 +10,6 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-
-	const encargosHref = whatsappLink(
-		PUBLIC_WHATSAPP_NUMBER,
-		'Hola, quiero cotizar un encargo especial.'
-	);
 </script>
 
 <svelte:head>
@@ -50,13 +45,13 @@
 				Ver la tienda
 				<ArrowRight size={16} stroke-width={1.75} />
 			</a>
-			<ExternalLink
-				href={encargosHref}
+			<a
+				href={resolve('/(store)/encargos')}
 				class="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-6 text-sm text-foreground transition-colors hover:border-purple-light/60 hover:bg-surface-raised"
 			>
 				<Sparkles size={16} stroke-width={1.75} />
 				Pide algo personalizado
-			</ExternalLink>
+			</a>
 		</div>
 	</div>
 </section>
@@ -170,12 +165,12 @@
 			Grabado láser, sublimación, vinil, velas o impresión 3D: cuéntanos qué imaginas y te
 			cotizamos.
 		</p>
-		<ExternalLink
-			href={encargosHref}
+		<a
+			href={resolve('/(store)/encargos')}
 			class="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light"
 		>
 			<Sparkles size={16} stroke-width={1.75} />
 			Cotizar mi encargo
-		</ExternalLink>
+		</a>
 	</div>
 </section>
