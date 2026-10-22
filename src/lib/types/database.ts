@@ -332,7 +332,10 @@ export type Database = {
 					created_at: string;
 					guia_tallas: Json;
 					id: string;
+					mayoreo_cantidad_min: number | null;
 					nombre: string;
+					precio_mayoreo: number | null;
+					precio_normal: number | null;
 					recargos_talla: Json;
 					tallas: string[];
 				};
@@ -340,7 +343,10 @@ export type Database = {
 					created_at?: string;
 					guia_tallas?: Json;
 					id?: string;
+					mayoreo_cantidad_min?: number | null;
 					nombre: string;
+					precio_mayoreo?: number | null;
+					precio_normal?: number | null;
 					recargos_talla?: Json;
 					tallas?: string[];
 				};
@@ -348,7 +354,10 @@ export type Database = {
 					created_at?: string;
 					guia_tallas?: Json;
 					id?: string;
+					mayoreo_cantidad_min?: number | null;
 					nombre?: string;
+					precio_mayoreo?: number | null;
+					precio_normal?: number | null;
 					recargos_talla?: Json;
 					tallas?: string[];
 				};
@@ -760,7 +769,7 @@ export type Database = {
 					modo_stock: Database['public']['Enums']['stock_mode'];
 					nombre: string;
 					permite_personalizar: boolean;
-					precio_base: number;
+					precio_base: number | null;
 					slug: string;
 					tipo_imagen: Database['public']['Enums']['image_type'];
 					updated_at: string;
@@ -777,7 +786,7 @@ export type Database = {
 					modo_stock?: Database['public']['Enums']['stock_mode'];
 					nombre: string;
 					permite_personalizar?: boolean;
-					precio_base: number;
+					precio_base?: number | null;
 					slug: string;
 					tipo_imagen: Database['public']['Enums']['image_type'];
 					updated_at?: string;
@@ -794,7 +803,7 @@ export type Database = {
 					modo_stock?: Database['public']['Enums']['stock_mode'];
 					nombre?: string;
 					permite_personalizar?: boolean;
-					precio_base?: number;
+					precio_base?: number | null;
 					slug?: string;
 					tipo_imagen?: Database['public']['Enums']['image_type'];
 					updated_at?: string;

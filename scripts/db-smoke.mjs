@@ -169,6 +169,53 @@ for (const table of PRIVATE_TABLES) {
 	await admin.from('folio_counters').delete().in('periodo', ['9901', '9902']);
 }
 
+// Garment types: real sizes and global prices (migration precios_y_tallas).
+{
+	const { data: playera } = await anon
+		.from('garment_types')
+		.select('id, tallas, precio_normal, precio_mayoreo')
+		.eq('nombre', 'Playera')
+		.single();
+	check(
+		'Playera sizes are CH, M, G, XG, XXG',
+		JSON.stringify(playera?.tallas) === JSON.stringify(['CH', 'M', 'G', 'XG', 'XXG']),
+		JSON.stringify(playera?.tallas)
+	);
+	check(
+		'Playera prices are $170 normal and $150 mayoreo (cents)',
+		playera?.precio_normal === 17000 && playera?.precio_mayoreo === 15000,
+		`${playera?.precio_normal}/${playera?.precio_mayoreo}`
+	);
+
+	const { data: category } = await admin
+		.from('categories')
+		.select('id')
+		.eq('slug', 'tazas')
+		.single();
+	const { error: noPrice } = await admin.from('products').insert({
+		slug: 'smoke-sin-precio',
+		nombre: 'Smoke',
+		category_id: category?.id,
+		tipo_imagen: 'foto'
+	});
+	check('a product without garment type requires precio_base', Boolean(noPrice), noPrice?.code);
+
+	const { data: garment, error: garmentError } = await admin
+		.from('products')
+		.insert({
+			slug: 'smoke-precio-global',
+			nombre: 'Smoke',
+			category_id: category?.id,
+			tipo_imagen: 'foto',
+			garment_type_id: playera?.id
+		})
+		.select('id')
+		.single();
+	check('a garment product may omit precio_base', !garmentError, garmentError?.message);
+	if (garment) await admin.from('products').delete().eq('id', garment.id);
+	await admin.from('products').delete().eq('slug', 'smoke-sin-precio');
+}
+
 // Seed is present.
 {
 	const { count: categories } = await admin

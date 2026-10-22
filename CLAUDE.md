@@ -10,7 +10,7 @@ Tienda en línea de **Ouroboros**: playeras y sudaderas con diseños de anime / 
 
 ## Estado actual
 
-- Fase actual: **Fase 1 — Base de datos**. Fase 0 completa (deploy en Vercel listo) salvo el logo, pendiente del negocio.
+- Fase actual: **Fase 2 — Admin: catálogo**. Fase 1 completa salvo la semilla de prendas base y tipos de encargo (pendientes del negocio).
 - El progreso vive en la sección 12 (checklist) y 14 (registro) del spec.
 
 ## Stack

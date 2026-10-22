@@ -40,11 +40,11 @@ join public.categories p on p.slug = v.parent_slug
 on conflict (slug) do nothing;
 
 -- Garment types ---------------------------------------------------------------
--- TODO(negocio): confirm the size range, recargos_talla (cents) and guia_tallas
--- measurements (spec section 13).
-insert into public.garment_types (nombre, tallas) values
-  ('Playera', array['S', 'M', 'L', 'XL', 'XXL', '3XL']),
-  ('Sudadera', array['S', 'M', 'L', 'XL', 'XXL', '3XL'])
+-- Prices in cents (migration 20261022090428). TODO(negocio): Sudadera prices, minimum
+-- pieces for mayoreo, recargos_talla and guia_tallas measurements (spec section 13).
+insert into public.garment_types (nombre, tallas, precio_normal, precio_mayoreo) values
+  ('Playera', array['CH', 'M', 'G', 'XG', 'XXG'], 17000, 15000),
+  ('Sudadera', array['CH', 'M', 'G', 'XG', 'XXG'], null, null)
 on conflict (nombre) do nothing;
 
 -- Garment bases ---------------------------------------------------------------
