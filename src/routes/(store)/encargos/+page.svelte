@@ -23,6 +23,9 @@
 	let references = $state<{ file: File; url: string }[]>([]);
 	let fileInput = $state<HTMLInputElement>();
 
+	/** Vercel rejects requests over ~4.5 MB; keep room for the text fields. */
+	const MAX_UPLOAD_TOTAL = 4 * 1024 * 1024;
+
 	const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(
 		new Date()
 	);
@@ -104,7 +107,13 @@
 			action="?/enviar"
 			enctype="multipart/form-data"
 			class="flex flex-col gap-10"
-			use:enhance={({ formData }) => {
+			use:enhance={({ formData, cancel }) => {
+				const total = references.reduce((sum, reference) => sum + reference.file.size, 0);
+				if (total > MAX_UPLOAD_TOTAL) {
+					fileError = 'Tus imágenes pesan demasiado. Quita alguna y mándala por WhatsApp.';
+					cancel();
+					return;
+				}
 				sending = true;
 				formData.delete('referencias');
 				for (const reference of references) formData.append('referencias', reference.file);

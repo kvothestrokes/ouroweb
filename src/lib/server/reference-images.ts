@@ -1,8 +1,12 @@
 import sharp from 'sharp';
-import { MAX_INPUT_PIXELS } from './design-files.js';
 
-/** The browser shrinks references before upload; this is only a safety cap. */
-export const MAX_REFERENCE_BYTES = 4 * 1024 * 1024;
+/**
+ * The browser shrinks references to 1600 px JPEG first. 3 files of this size still fit in
+ * one Vercel request (~4.5 MB), so a bigger file means it skipped that step.
+ */
+export const MAX_REFERENCE_BYTES = 1.4 * 1024 * 1024;
+/** Enough for any phone photo; keeps decoding memory small. */
+const MAX_INPUT_PIXELS = 25_000_000;
 const MAX_WIDTH = 1600;
 const FORMATS = new Set(['jpeg', 'png', 'webp']);
 const NOT_AN_IMAGE = 'Las imágenes de referencia deben ser JPG, PNG o WebP.';
@@ -16,7 +20,10 @@ export type PreparedReference = { ok: true; bytes: Buffer } | { ok: false; messa
 export async function prepareReference(file: File): Promise<PreparedReference> {
 	if (file.size === 0) return { ok: false, message: NOT_AN_IMAGE };
 	if (file.size > MAX_REFERENCE_BYTES) {
-		return { ok: false, message: 'Cada imagen de referencia debe pesar menos de 4 MB.' };
+		return {
+			ok: false,
+			message: 'Una imagen de referencia es muy pesada. Intenta con otra o mándala por WhatsApp.'
+		};
 	}
 	const input = Buffer.from(await file.arrayBuffer());
 	try {

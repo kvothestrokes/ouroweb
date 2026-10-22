@@ -81,6 +81,13 @@ export async function placeCustomOrder(
 		p_request: request
 	});
 	if (error || !folio) {
+		if (error?.message === 'request_type_unavailable') {
+			return {
+				ok: false,
+				status: 400,
+				message: 'Ese tipo de encargo ya no está disponible. Elige otro.'
+			};
+		}
 		if (error?.message === 'too_many_orders' || error?.message === 'store_busy') {
 			return {
 				ok: false,

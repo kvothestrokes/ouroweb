@@ -648,6 +648,37 @@ for (const table of PRIVATE_TABLES) {
 		p_fecha: fecha
 	});
 	check('create_custom_order requires a description', Boolean(emptyError), emptyError?.code);
+
+	const { data: hiddenType } = await admin
+		.from('custom_request_types')
+		.insert({ nombre: 'Smoke tipo oculto', activo: false })
+		.select('id')
+		.single();
+	const { error: hiddenError } = await admin.rpc('create_custom_order', {
+		p_order: { ...order, cliente_whatsapp: '520000000003' },
+		p_request: { ...request, custom_request_type_id: hiddenType?.id },
+		p_fecha: fecha
+	});
+	check(
+		'create_custom_order rejects hidden request types',
+		Boolean(hiddenError),
+		hiddenError?.message
+	);
+	await admin.from('custom_request_types').delete().eq('nombre', 'Smoke tipo oculto');
+
+	// Requests get their own cap inside the store-wide one, so they cannot block catalog orders.
+	await cleanup();
+	const burst = await Promise.all(
+		Array.from({ length: 21 }, (_, i) =>
+			admin.rpc('create_custom_order', {
+				p_order: { ...order, cliente_whatsapp: `5298${String(i).padStart(8, '0')}` },
+				p_request: request,
+				p_fecha: fecha
+			})
+		)
+	);
+	const busy = burst.filter((result) => result.error?.message === 'store_busy').length;
+	check('special requests are capped at 20 per hour', busy === 1, `${busy} rejected`);
 	await cleanup();
 }
 
