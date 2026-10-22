@@ -245,6 +245,202 @@ for (const table of PRIVATE_TABLES) {
 	if (ok) await admin.from('garment_bases').delete().eq('id', ok.id);
 }
 
+// save_product: one transaction for the product, its colors, collections and stock.
+{
+	const { error: anonError } = await anon.rpc('save_product', {
+		p_id: null,
+		p_product: {},
+		p_colors: [],
+		p_collections: [],
+		p_stock: []
+	});
+	check('anon cannot call save_product', Boolean(anonError), anonError?.code);
+
+	const one = async (query) => (await query).data;
+	const playera = await one(
+		admin.from('garment_types').select('id').eq('nombre', 'Playera').single()
+	);
+	const category = await one(
+		admin.from('categories').select('id').eq('slug', 'playeras-con-diseno').single()
+	);
+	const [negro, blanco] = await Promise.all(
+		['playera/negro', 'playera/blanco'].map((foto) =>
+			one(admin.from('garment_bases').select('id').eq('foto', foto).single())
+		)
+	);
+	await admin.from('designs').delete().eq('nombre', 'Smoke diseño');
+	await admin.from('collections').delete().eq('slug', 'smoke-coleccion');
+	await admin.from('products').delete().eq('slug', 'smoke-producto');
+	await admin.from('garment_types').delete().eq('nombre', 'Smoke tipo');
+	const design = await one(
+		admin
+			.from('designs')
+			.insert({ nombre: 'Smoke diseño', path_prenda_oscura: '/smoke/d.png' })
+			.select('id')
+			.single()
+	);
+	const collection = await one(
+		admin
+			.from('collections')
+			.insert({ slug: 'smoke-coleccion', nombre: 'Smoke' })
+			.select('id')
+			.single()
+	);
+	const otherType = await one(
+		admin
+			.from('garment_types')
+			.insert({ nombre: 'Smoke tipo', tallas: ['M'] })
+			.select('id')
+			.single()
+	);
+	const otherBase = await one(
+		admin
+			.from('garment_bases')
+			.insert({
+				garment_type_id: otherType?.id,
+				color_nombre: 'Smoke',
+				color_hex: '#000000',
+				foto: 'smoke-tipo/negro',
+				area_impresion: { x: 1, y: 1, ancho: 1 }
+			})
+			.select('id')
+			.single()
+	);
+
+	const product = {
+		slug: 'smoke-producto',
+		nombre: 'Smoke producto',
+		descripcion: '',
+		category_id: category?.id,
+		tipo_imagen: 'mockup',
+		garment_type_id: playera?.id,
+		design_id: design?.id,
+		precio_base: null,
+		modo_stock: 'stock',
+		permite_personalizar: false,
+		activo: false,
+		destacado: false
+	};
+	const counts = async (id) => ({
+		colors: (
+			await admin
+				.from('product_colors')
+				.select('*', { count: 'exact', head: true })
+				.eq('product_id', id)
+		).count,
+		collections: (
+			await admin
+				.from('product_collections')
+				.select('*', { count: 'exact', head: true })
+				.eq('product_id', id)
+		).count,
+		stock: (
+			await admin
+				.from('product_stock')
+				.select('*', { count: 'exact', head: true })
+				.eq('product_id', id)
+		).count
+	});
+
+	const { data: id, error: createError } = await admin.rpc('save_product', {
+		p_id: null,
+		p_product: product,
+		p_colors: [negro?.id, blanco?.id],
+		p_collections: [collection?.id],
+		p_stock: [
+			{ garment_base_id: negro?.id, talla: 'M', cantidad: 3 },
+			{ garment_base_id: blanco?.id, talla: 'G', cantidad: 0 }
+		]
+	});
+	check(
+		'save_product creates a product with its colors, collections and stock',
+		!createError && Boolean(id),
+		createError?.message
+	);
+	if (id) {
+		const created = await counts(id);
+		check(
+			'creation stored 2 colors, 1 collection and 2 stock rows',
+			created.colors === 2 && created.collections === 1 && created.stock === 2,
+			JSON.stringify(created)
+		);
+
+		const { error: updateError } = await admin.rpc('save_product', {
+			p_id: id,
+			p_product: { ...product, nombre: 'Smoke producto 2', modo_stock: 'bajo_pedido' },
+			p_colors: [negro?.id],
+			p_collections: [],
+			p_stock: []
+		});
+		const updated = await counts(id);
+		const { data: row } = await admin
+			.from('products')
+			.select('nombre, modo_stock')
+			.eq('id', id)
+			.single();
+		check(
+			'update replaces colors, collections and stock',
+			!updateError &&
+				updated.colors === 1 &&
+				updated.collections === 0 &&
+				updated.stock === 0 &&
+				row?.nombre === 'Smoke producto 2',
+			updateError?.message ?? JSON.stringify(updated)
+		);
+
+		const { error: foreignColor } = await admin.rpc('save_product', {
+			p_id: id,
+			p_product: product,
+			p_colors: [negro?.id, otherBase?.id],
+			p_collections: [],
+			p_stock: []
+		});
+		check(
+			'a color of another garment type is rejected',
+			Boolean(foreignColor),
+			foreignColor?.message
+		);
+
+		const { error: stockOutside } = await admin.rpc('save_product', {
+			p_id: id,
+			p_product: product,
+			p_colors: [negro?.id],
+			p_collections: [collection?.id],
+			p_stock: [{ garment_base_id: blanco?.id, talla: 'M', cantidad: 1 }]
+		});
+		check(
+			'stock for a color the product does not have is rejected',
+			Boolean(stockOutside),
+			stockOutside?.message
+		);
+
+		const { error: badSize } = await admin.rpc('save_product', {
+			p_id: id,
+			p_product: product,
+			p_colors: [negro?.id],
+			p_collections: [],
+			p_stock: [{ garment_base_id: negro?.id, talla: '3XL', cantidad: 1 }]
+		});
+		check(
+			'stock for a size the garment type does not have is rejected',
+			Boolean(badSize),
+			badSize?.message
+		);
+
+		const after = await counts(id);
+		check(
+			'a rejected save leaves the previous colors and collections untouched',
+			after.colors === 1 && after.collections === 0,
+			JSON.stringify(after)
+		);
+		await admin.from('products').delete().eq('id', id);
+	}
+	await admin.from('garment_bases').delete().eq('foto', 'smoke-tipo/negro');
+	await admin.from('garment_types').delete().eq('nombre', 'Smoke tipo');
+	await admin.from('collections').delete().eq('slug', 'smoke-coleccion');
+	await admin.from('designs').delete().eq('nombre', 'Smoke diseño');
+}
+
 // Seed is present.
 {
 	const { count: categories } = await admin

@@ -980,6 +980,16 @@ export type Database = {
 				Args: { p_fecha?: string; p_prefijo?: string };
 				Returns: string;
 			};
+			save_product: {
+				Args: {
+					p_collections: string[];
+					p_colors: string[];
+					p_id: string;
+					p_product: Json;
+					p_stock: Json;
+				};
+				Returns: string;
+			};
 		};
 		Enums: {
 			coupon_type: 'porcentaje' | 'fijo';
