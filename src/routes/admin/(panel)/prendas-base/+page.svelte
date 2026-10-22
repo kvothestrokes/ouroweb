@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { ImagePlus, LoaderCircle } from '@lucide/svelte';
+	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import type { PageProps } from './$types';
 
@@ -24,22 +25,13 @@
 	impresión.
 </p>
 
-{#if form?.message}
-	<p
-		role="alert"
-		class="mt-6 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
-	>
-		{form.message}
-	</p>
-{:else if form?.registered}
-	<p
-		role="status"
-		class="mt-6 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success"
-	>
-		Listo: registramos {form.registered}
-		{form.registered === 1 ? 'color nuevo' : 'colores nuevos'}.
-	</p>
-{/if}
+<FormMessage
+	error={form?.message}
+	success={form?.registered
+		? `Listo: registramos ${form.registered} ${form.registered === 1 ? 'color nuevo' : 'colores nuevos'}.`
+		: null}
+	class="mt-6"
+/>
 
 {#each data.types as type (type.id)}
 	<section class="mt-10" aria-labelledby="tipo-{type.id}">

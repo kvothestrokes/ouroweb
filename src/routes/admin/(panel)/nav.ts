@@ -25,8 +25,18 @@ export type NavItem = {
 
 export const NAV: NavItem[] = [
 	{ path: '/admin', label: 'Inicio', icon: House, route: '/admin/(panel)' },
-	{ path: '/admin/categorias', label: 'Categorías', icon: FolderTree },
-	{ path: '/admin/colecciones', label: 'Colecciones', icon: Tags },
+	{
+		path: '/admin/categorias',
+		label: 'Categorías',
+		icon: FolderTree,
+		route: '/admin/(panel)/categorias'
+	},
+	{
+		path: '/admin/colecciones',
+		label: 'Colecciones',
+		icon: Tags,
+		route: '/admin/(panel)/colecciones'
+	},
 	{
 		path: '/admin/prendas-base',
 		label: 'Prendas base',

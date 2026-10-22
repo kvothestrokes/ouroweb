@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { ArrowLeft, LoaderCircle, Trash2 } from '@lucide/svelte';
+	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -119,23 +120,13 @@
 	{data.base.tipoNombre} · {data.base.colorNombre}
 </h1>
 
-{#if form?.message}
-	<p
-		role="alert"
-		class="mt-4 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
-	>
-		{form.message}
-	</p>
-{:else if form?.saved}
-	<p
-		role="status"
-		class="mt-4 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success"
-	>
-		Cambios guardados{form.alsoUpdated
-			? `; el área también se copió a ${form.alsoUpdated} colores más`
-			: ''}.
-	</p>
-{/if}
+<FormMessage
+	error={form?.message}
+	success={form?.saved
+		? `Cambios guardados${form.alsoUpdated ? `; el área también se copió a ${form.alsoUpdated} colores más` : ''}.`
+		: null}
+	class="mt-4"
+/>
 
 <div class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
 	<div class="flex flex-col gap-6">

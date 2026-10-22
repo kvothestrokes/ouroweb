@@ -1,3 +1,5 @@
+import { slugify } from '#lib/domain/slug.js';
+
 /**
  * Base garment photos and the watermark source, bundled into the server only.
  *
@@ -29,13 +31,7 @@ function fromDataUrl(dataUrl: string): Buffer {
 
 /** Folder name for a garment type: `Playera` → `playera`, `Sudadera Oversize` → `sudadera-oversize`. */
 export function garmentTypeSlug(nombre: string): string {
-	return nombre
-		.normalize('NFD')
-		.replace(/[\u0300-\u036f]/g, '')
-		.toLowerCase()
-		.trim()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-|-$/g, '');
+	return slugify(nombre);
 }
 
 /** Splits a `garment_bases.foto` key ("playera/negro") into its parts. */
