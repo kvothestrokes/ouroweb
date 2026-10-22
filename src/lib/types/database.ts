@@ -293,9 +293,9 @@ export type Database = {
 					color_nombre: string;
 					created_at: string;
 					es_clara: boolean;
+					foto: string;
 					garment_type_id: string;
 					id: string;
-					imagekit_path: string;
 				};
 				Insert: {
 					area_impresion: Json;
@@ -303,9 +303,9 @@ export type Database = {
 					color_nombre: string;
 					created_at?: string;
 					es_clara?: boolean;
+					foto: string;
 					garment_type_id: string;
 					id?: string;
-					imagekit_path: string;
 				};
 				Update: {
 					area_impresion?: Json;
@@ -313,9 +313,9 @@ export type Database = {
 					color_nombre?: string;
 					created_at?: string;
 					es_clara?: boolean;
+					foto?: string;
 					garment_type_id?: string;
 					id?: string;
-					imagekit_path?: string;
 				};
 				Relationships: [
 					{

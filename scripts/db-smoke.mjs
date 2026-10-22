@@ -216,6 +216,35 @@ for (const table of PRIVATE_TABLES) {
 	await admin.from('products').delete().eq('slug', 'smoke-sin-precio');
 }
 
+// Garment bases point to a local photo key "<type>/<color>".
+{
+	const { data: playera } = await admin
+		.from('garment_types')
+		.select('id')
+		.eq('nombre', 'Playera')
+		.single();
+	const row = (foto) => ({
+		garment_type_id: playera?.id,
+		color_nombre: `Smoke ${foto}`,
+		color_hex: '#000000',
+		foto,
+		area_impresion: { x: 1, y: 1, ancho: 1 }
+	});
+	const { error: badPath } = await admin.from('garment_bases').insert(row('../secret'));
+	check(
+		'garment base rejects a photo key outside "<type>/<color>"',
+		Boolean(badPath),
+		badPath?.code
+	);
+	const { data: ok, error: okError } = await admin
+		.from('garment_bases')
+		.insert(row('playera/smoke-color'))
+		.select('id')
+		.single();
+	check('garment base accepts "playera/smoke-color"', !okError, okError?.message);
+	if (ok) await admin.from('garment_bases').delete().eq('id', ok.id);
+}
+
 // Seed is present.
 {
 	const { count: categories } = await admin
