@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { baseColors, loadBase, loadWatermarkSource } from './garment-assets.js';
+import {
+	baseColors,
+	garmentTypeSlug,
+	loadBase,
+	loadWatermarkSource,
+	parseFotoKey
+} from './garment-assets.js';
 
 describe('baseColors', () => {
 	it('lists the 19 playera colors from the file names', () => {
@@ -34,5 +40,22 @@ describe('loadWatermarkSource', () => {
 	it('returns the logo bytes', async () => {
 		const bytes = await loadWatermarkSource();
 		expect(bytes.length).toBeGreaterThan(1000);
+	});
+});
+
+describe('garmentTypeSlug', () => {
+	it('maps a garment type name to its photo folder', () => {
+		expect(garmentTypeSlug('Playera')).toBe('playera');
+		expect(garmentTypeSlug('Sudadera Oversize')).toBe('sudadera-oversize');
+		expect(garmentTypeSlug('Camisón')).toBe('camison');
+	});
+});
+
+describe('parseFotoKey', () => {
+	it('splits a photo key and rejects anything else', () => {
+		expect(parseFotoKey('playera/rosa-pastel')).toEqual({ tipo: 'playera', color: 'rosa-pastel' });
+		expect(parseFotoKey('playera')).toBeNull();
+		expect(parseFotoKey('playera/negro/extra')).toBeNull();
+		expect(parseFotoKey('../negro')).toBeNull();
 	});
 });

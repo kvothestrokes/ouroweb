@@ -6,6 +6,13 @@
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
+
+	/** Keeps the active item visible in the horizontally scrolling mobile menu. */
+	function revealIfActive(active: boolean) {
+		return (node: HTMLElement) => {
+			if (active) node.scrollIntoView({ inline: 'center', block: 'nearest' });
+		};
+	}
 </script>
 
 <svelte:head>
@@ -25,6 +32,7 @@
 					<a
 						href={resolve(item.route)}
 						aria-current={active ? 'page' : undefined}
+						{@attach revealIfActive(active && orientation === 'row')}
 						class={[
 							'flex min-h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors',
 							active

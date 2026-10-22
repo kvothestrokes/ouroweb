@@ -27,6 +27,24 @@ function fromDataUrl(dataUrl: string): Buffer {
 	return Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64');
 }
 
+/** Folder name for a garment type: `Playera` → `playera`, `Sudadera Oversize` → `sudadera-oversize`. */
+export function garmentTypeSlug(nombre: string): string {
+	return nombre
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
+/** Splits a `garment_bases.foto` key ("playera/negro") into its parts. */
+export function parseFotoKey(foto: string): { tipo: string; color: string } | null {
+	const [tipo, color, ...rest] = foto.split('/');
+	if (rest.length || !tipo || !color || !SLUG.test(tipo) || !SLUG.test(color)) return null;
+	return { tipo, color };
+}
+
 /** Colors available for a garment type, from the file names, sorted. */
 export function baseColors(tipo: string): string[] {
 	if (!SLUG.test(tipo)) return [];
