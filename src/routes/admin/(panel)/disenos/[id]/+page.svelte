@@ -73,7 +73,7 @@
 	</div>
 	{#if data.design.hasClara && data.design.hasOscura}
 		<label class="flex min-h-11 items-center gap-3 text-sm text-foreground">
-			<input type="checkbox" name="quitar_clara" class="size-5 accent-[var(--gold)]" />
+			<input type="checkbox" name="quitar_clara" class="size-5 accent-gold" />
 			Quitar la versión para prendas claras
 		</label>
 	{/if}
@@ -105,7 +105,7 @@
 		</p>
 	{/if}
 	{#each data.previews as group (group.tipo)}
-		<h3 class="mt-6 text-sm font-medium text-muted-foreground">{group.tipo}</h3>
+		<p class="mt-6 text-sm font-medium text-muted-foreground">{group.tipo}</p>
 		<ul class="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 			{#each group.items as base (base.id)}
 				<li class="overflow-hidden rounded-xl border border-border bg-card">

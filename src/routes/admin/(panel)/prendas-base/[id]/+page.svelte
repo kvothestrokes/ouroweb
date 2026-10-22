@@ -158,7 +158,7 @@
 			>
 				<span
 					role="presentation"
-					class="absolute -right-2.5 -bottom-2.5 size-5 cursor-nwse-resize touch-none rounded-full border-2 border-background bg-purple-light"
+					class="absolute -right-2.5 -bottom-2.5 size-5 cursor-nwse-resize touch-none rounded-full border-2 border-background bg-purple-light after:absolute after:-inset-3 after:content-['']"
 					onpointerdown={(event) => startDrag('resize', event)}
 					onpointermove={onDrag}
 					onpointerup={endDrag}
@@ -233,7 +233,7 @@
 					type="checkbox"
 					name="es_clara"
 					checked={data.base.esClara}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Prenda clara (usa la versión del diseño para prendas claras)
 			</label>
@@ -290,7 +290,7 @@
 			</fieldset>
 
 			<label class="flex min-h-11 items-center gap-3 text-sm text-foreground">
-				<input type="checkbox" name="aplicar_a_todos" class="size-5 accent-[var(--gold)]" />
+				<input type="checkbox" name="aplicar_a_todos" class="size-5 accent-gold" />
 				Usar esta área en todos los colores de {data.base.tipoNombre.toLowerCase()}
 			</label>
 

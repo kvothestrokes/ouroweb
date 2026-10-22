@@ -110,10 +110,16 @@
 								]}
 							>
 								{product.nombre}
+								{#if !product.activo}
+									<span
+										class="ml-2 rounded-full border border-border px-2 py-0.5 text-xs font-normal text-muted-foreground"
+									>
+										Oculto
+									</span>
+								{/if}
 							</p>
 							<p class="truncate text-xs text-muted-foreground">
 								{product.categoria} · {product.modoStock === 'stock' ? 'En stock' : 'Bajo pedido'}
-								{product.activo ? '' : ' · Oculto'}
 							</p>
 						</div>
 						<span class="shrink-0 text-sm font-semibold text-gold tabular-nums"

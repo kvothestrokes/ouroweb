@@ -16,7 +16,8 @@ export const FOLDERS = {
 
 export type Folder = keyof typeof FOLDERS;
 
-const PRIVATE_FOLDERS: ReadonlySet<Folder> = new Set(['designs', 'orders']);
+// Product photos are private too: the store only serves them watermarked through /img/f.
+const PRIVATE_FOLDERS: ReadonlySet<Folder> = new Set(['designs', 'orders', 'products']);
 
 const client = new ImageKit({ privateKey: IMAGEKIT_PRIVATE_KEY });
 
@@ -118,7 +119,7 @@ export async function deleteImageByPath(path: string): Promise<boolean> {
 	const slash = path.lastIndexOf('/');
 	const folder = path.slice(0, slash) || '/';
 	const name = path.slice(slash + 1);
-	if (!name || name.includes('"')) return false;
+	if (!name || /["\\\n\r]/.test(name)) return false;
 	try {
 		const assets = await client.assets.list({
 			path: folder,

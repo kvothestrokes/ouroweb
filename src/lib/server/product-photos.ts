@@ -1,5 +1,6 @@
 import sharp, { type Metadata } from 'sharp';
 import { MAX_PHOTO_WIDTH } from '#lib/domain/design-variant.js';
+import { MAX_INPUT_PIXELS, MAX_UPLOAD_BYTES } from './design-files.js';
 import { uploadImage } from './imagekit.js';
 
 export { MAX_PHOTO_WIDTH };
@@ -13,16 +14,21 @@ export type PreparedPhoto = { ok: true; bytes: Buffer } | { ok: false; message: 
 /** Validates a real product photo and normalizes it to WebP no wider than MAX_PHOTO_WIDTH. */
 export async function preparePhoto(file: File): Promise<PreparedPhoto> {
 	if (file.size === 0) return { ok: false, message: NOT_A_PHOTO };
+	if (file.size > MAX_UPLOAD_BYTES) return { ok: false, message: 'La foto pesa más de 15 MB.' };
 	const input = Buffer.from(await file.arrayBuffer());
+	const open = () => sharp(input, { limitInputPixels: MAX_INPUT_PIXELS });
 
 	let meta: Metadata;
 	try {
-		meta = await sharp(input).metadata();
+		meta = await open().metadata();
 	} catch {
 		return { ok: false, message: NOT_A_PHOTO };
 	}
 	if (!meta.format || !FORMATS.has(meta.format) || !meta.width) {
 		return { ok: false, message: NOT_A_PHOTO };
+	}
+	if (meta.width * (meta.height ?? 0) > MAX_INPUT_PIXELS) {
+		return { ok: false, message: 'La foto es demasiado grande (máximo 40 megapíxeles).' };
 	}
 	if (meta.width < MIN_PHOTO_WIDTH) {
 		return {
@@ -31,7 +37,7 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
 		};
 	}
 
-	const bytes = await sharp(input)
+	const bytes = await open()
 		.rotate() // honor the camera orientation before EXIF is dropped
 		.resize({ width: MAX_PHOTO_WIDTH, withoutEnlargement: true })
 		.webp({ quality: 85 })

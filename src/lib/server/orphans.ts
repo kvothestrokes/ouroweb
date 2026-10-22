@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { orphanFiles, type StoredFile } from '#lib/domain/orphans.js';
+import { inFolder, orphanFiles, type StoredFile } from '#lib/domain/orphans.js';
 import type { Database } from '#lib/types/database.js';
-import { deleteFileById, listFolderFiles } from './imagekit.js';
+import { FOLDERS, deleteFileById, listFolderFiles } from './imagekit.js';
 
 type Db = SupabaseClient<Database>;
 
@@ -12,20 +12,58 @@ type Db = SupabaseClient<Database>;
  */
 export async function findOrphans(db: Db, now = new Date()): Promise<StoredFile[]> {
 	const [designs, images] = await Promise.all([
-		db.from('designs').select('path_prenda_oscura, path_prenda_clara'),
-		db.from('product_images').select('imagekit_path')
+		readAll<{ path_prenda_oscura: string | null; path_prenda_clara: string | null }>(
+			db,
+			'designs',
+			'path_prenda_oscura, path_prenda_clara'
+		),
+		readAll<{ imagekit_path: string }>(db, 'product_images', 'imagekit_path')
 	]);
-	if (designs.error || images.error) throw new Error('could not read file references');
 
 	const used = new Set<string>();
-	for (const design of designs.data) {
+	for (const design of designs) {
 		if (design.path_prenda_oscura) used.add(design.path_prenda_oscura);
 		if (design.path_prenda_clara) used.add(design.path_prenda_clara);
 	}
-	for (const image of images.data) used.add(image.imagekit_path);
+	for (const image of images) used.add(image.imagekit_path);
 
-	const files = [...(await listFolderFiles('designs')), ...(await listFolderFiles('products'))];
+	const files = [
+		...(await listFolderFiles('designs')).filter((file) =>
+			inFolder(file.filePath, FOLDERS.designs)
+		),
+		...(await listFolderFiles('products')).filter((file) =>
+			inFolder(file.filePath, FOLDERS.products)
+		)
+	];
 	return orphanFiles(files, used, now);
+}
+
+const PAGE = 1000;
+
+/**
+ * Reads every row of a table. PostgREST silently caps responses (max_rows), so rows are paged
+ * and the total is checked against an exact count: a short list must abort, never delete.
+ */
+async function readAll<Row>(
+	db: Db,
+	table: 'designs' | 'product_images',
+	columns: string
+): Promise<Row[]> {
+	const rows: Row[] = [];
+	let total: number | null = null;
+	for (let from = 0; total === null || from < total; from += PAGE) {
+		const { data, error, count } = await db
+			.from(table)
+			.select(columns, { count: 'exact' })
+			.order('id')
+			.range(from, from + PAGE - 1);
+		if (error || count === null) throw new Error(`could not read ${table}`);
+		total = count;
+		rows.push(...(data as Row[]));
+		if (data.length === 0) break;
+	}
+	if (rows.length !== total) throw new Error(`incomplete read of ${table}`);
+	return rows;
 }
 
 /** Deletes the orphans found right now (re-checked, never from a stale list). */

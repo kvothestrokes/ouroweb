@@ -31,6 +31,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 export const actions = {
 	guardar: async ({ request, locals, params }) => {
+		if (!validId(params.id)) return fail(404, { message: 'Producto no encontrado.' });
 		const context = await loadProductContext(locals.supabase);
 		if (!context) return fail(500, { message: 'No pudimos cargar los datos del catálogo.' });
 
@@ -43,27 +44,31 @@ export const actions = {
 	},
 
 	eliminar: async ({ locals, params }) => {
+		if (!validId(params.id)) return fail(404, { message: 'Producto no encontrado.' });
 		const problem = await deleteProduct(locals.supabase, params.id);
 		if (problem) return fail(400, { message: problem });
 		redirect(303, '/admin/productos');
 	},
 
 	foto_subir: async ({ request, locals, params }) => {
+		if (!validId(params.id)) return fail(404, { message: 'Producto no encontrado.' });
 		const file = pickedFile((await request.formData()).get('foto'));
 		if (!file) return fail(400, { message: 'Elige una foto.' });
 
-		const { data: images } = await locals.supabase
+		const { data: images, error: imagesError } = await locals.supabase
 			.from('product_images')
 			.select('orden')
 			.eq('product_id', params.id);
-		if ((images?.length ?? 0) >= MAX_PHOTOS) {
+		if (imagesError)
+			return fail(500, { message: 'No pudimos revisar las fotos. Intenta de nuevo.' });
+		if (images.length >= MAX_PHOTOS) {
 			return fail(400, { message: `Máximo ${MAX_PHOTOS} fotos por producto.` });
 		}
 
 		const stored = await storeProductPhoto(file);
 		if (!stored.ok) return fail(400, { message: stored.message });
 
-		const orden = Math.max(-1, ...(images ?? []).map((image) => image.orden)) + 1;
+		const orden = Math.max(-1, ...images.map((image) => image.orden)) + 1;
 		const { error: insertError } = await locals.supabase
 			.from('product_images')
 			.insert({ product_id: params.id, imagekit_path: stored.path, orden });
@@ -75,6 +80,7 @@ export const actions = {
 	},
 
 	foto_eliminar: async ({ request, locals, params }) => {
+		if (!validId(params.id)) return fail(404, { message: 'Producto no encontrado.' });
 		const imageId = String((await request.formData()).get('image_id') ?? '');
 		if (!validId(imageId)) return fail(400, { message: 'Esa foto no existe.' });
 
@@ -91,6 +97,7 @@ export const actions = {
 	},
 
 	foto_mover: async ({ request, locals, params }) => {
+		if (!validId(params.id)) return fail(404, { message: 'Producto no encontrado.' });
 		const form = await request.formData();
 		const imageId = String(form.get('image_id') ?? '');
 		const offset = form.get('direccion') === 'antes' ? -1 : 1;

@@ -1,4 +1,4 @@
-import sharp, { type Metadata } from 'sharp';
+import sharp, { type Metadata, type Sharp } from 'sharp';
 import { MAX_DESIGN_WIDTH } from '#lib/domain/design-variant.js';
 
 export { MAX_DESIGN_WIDTH };
@@ -10,19 +10,28 @@ export type PreparedDesign =
 
 const NOT_PNG = 'El diseño debe ser un PNG con fondo transparente.';
 
+/** Upload limits: bytes before reading and decoded pixels (guards against decompression bombs). */
+export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+export const MAX_INPUT_PIXELS = 40_000_000;
+
 /** Validates an uploaded design and normalizes it to a PNG no wider than MAX_DESIGN_WIDTH. */
 export async function prepareDesign(file: File): Promise<PreparedDesign> {
 	if (file.size === 0) return { ok: false, message: NOT_PNG };
+	if (file.size > MAX_UPLOAD_BYTES) return { ok: false, message: 'El archivo pesa más de 15 MB.' };
 	const input = Buffer.from(await file.arrayBuffer());
+	const open = () => sharp(input, { limitInputPixels: MAX_INPUT_PIXELS });
 
 	let meta: Metadata;
 	try {
-		meta = await sharp(input).metadata();
+		meta = await open().metadata();
 	} catch {
 		return { ok: false, message: NOT_PNG };
 	}
 	if (meta.format !== 'png' || !meta.width || !meta.height) return { ok: false, message: NOT_PNG };
-	if (!meta.hasAlpha || !(await hasTransparentPixels(input))) {
+	if (meta.width * meta.height > MAX_INPUT_PIXELS) {
+		return { ok: false, message: 'El diseño es demasiado grande (máximo 40 megapíxeles).' };
+	}
+	if (!meta.hasAlpha || !(await hasTransparentPixels(open()))) {
 		return { ok: false, message: 'El PNG no tiene fondo transparente.' };
 	}
 	if (meta.width < MIN_DESIGN_WIDTH) {
@@ -32,7 +41,7 @@ export async function prepareDesign(file: File): Promise<PreparedDesign> {
 		};
 	}
 
-	const png = await sharp(input)
+	const png = await open()
 		.resize({ width: MAX_DESIGN_WIDTH, withoutEnlargement: true })
 		.png({ compressionLevel: 9 })
 		.toBuffer();
@@ -41,8 +50,8 @@ export async function prepareDesign(file: File): Promise<PreparedDesign> {
 }
 
 /** An alpha channel can be fully opaque; a design needs at least some transparent pixels. */
-async function hasTransparentPixels(input: Buffer): Promise<boolean> {
-	const { channels } = await sharp(input).stats();
+async function hasTransparentPixels(image: Sharp): Promise<boolean> {
+	const { channels } = await image.stats();
 	const alpha = channels[3];
 	return alpha !== undefined && alpha.min < 255;
 }

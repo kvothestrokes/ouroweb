@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { orphanFiles } from './orphans.js';
+import { inFolder, orphanFiles } from './orphans.js';
 
 const now = new Date('2026-10-22T12:00:00Z');
 const minutesAgo = (minutes: number) => new Date(now.getTime() - minutes * 60_000).toISOString();
@@ -31,5 +31,14 @@ describe('orphanFiles', () => {
 				now
 			)
 		).toEqual([]);
+	});
+});
+
+describe('inFolder', () => {
+	it('keeps only files directly inside the folder', () => {
+		expect(inFolder('/ouroboros/designs/a.png', '/ouroboros/designs')).toBe(true);
+		expect(inFolder('/ouroboros/designs-old/a.png', '/ouroboros/designs')).toBe(false);
+		expect(inFolder('/ouroboros/designs/sub/a.png', '/ouroboros/designs')).toBe(false);
+		expect(inFolder('/ouroboros/products/a.webp', '/ouroboros/designs')).toBe(false);
 	});
 });

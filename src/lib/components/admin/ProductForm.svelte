@@ -147,7 +147,7 @@
 								name="colecciones"
 								value={collection.id}
 								checked={values?.collections.includes(collection.id)}
-								class="size-5 accent-[var(--gold)]"
+								class="size-5 accent-gold"
 							/>
 							{collection.nombre}
 						</label>
@@ -170,7 +170,7 @@
 					onchange={() => {
 						if (!garmentTypeId) garmentTypeId = context.garmentTypes[0]?.id ?? '';
 					}}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Mockup automático (diseño sobre la prenda)
 			</label>
@@ -180,7 +180,7 @@
 					name="tipo_imagen"
 					value="foto"
 					bind:group={tipo}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Fotos reales (tazas, termos, velas…)
 			</label>
@@ -267,7 +267,7 @@
 									value={base.id}
 									checked={selected.includes(base.id)}
 									onchange={(event) => toggleColor(base.id, event.currentTarget.checked)}
-									class="size-5 accent-[var(--gold)]"
+									class="size-5 accent-gold"
 								/>
 								<span
 									class="size-4 shrink-0 rounded-full border border-border"
@@ -338,7 +338,7 @@
 					name="modo_stock"
 					value="bajo_pedido"
 					bind:group={modo}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Bajo pedido
 			</label>
@@ -349,7 +349,7 @@
 					value="stock"
 					bind:group={modo}
 					disabled={!garmentType}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				En stock (por color y talla)
 			</label>
@@ -408,7 +408,7 @@
 					type="checkbox"
 					name="activo"
 					checked={initial.activo ?? false}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Visible en la tienda
 			</label>
@@ -417,7 +417,7 @@
 					type="checkbox"
 					name="destacado"
 					checked={initial.destacado ?? false}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Destacado
 			</label>
@@ -426,7 +426,7 @@
 					type="checkbox"
 					name="permite_personalizar"
 					checked={initial.permite_personalizar ?? false}
-					class="size-5 accent-[var(--gold)]"
+					class="size-5 accent-gold"
 				/>
 				Se puede personalizar (texto o imagen, por cotizar)
 			</label>

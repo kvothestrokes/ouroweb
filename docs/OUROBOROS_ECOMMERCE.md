@@ -3,7 +3,7 @@
 > Documento base del proyecto: visión, decisiones, flujos, modelo de datos y roadmap con checklist para trazar el progreso paso a paso.
 
 **Última actualización:** 22 de octubre de 2026
-**Estado general:** 🟡 Fase 2 en progreso (Fase 1 completa salvo la semilla de prendas base y tipos de encargo)
+**Estado general:** 🟡 Fase 3 en progreso (Fase 2 completa)
 
 ---
 
@@ -49,7 +49,7 @@ El cliente puede **pedir productos del catálogo** o **solicitar encargos especi
 | Subidas desde el admin                    | Diseños y fotos de producto se suben desde el panel en Fase 2 reutilizando `src/lib/server/imagekit.ts`; los diseños se suben como archivos privados de ImageKit                                                                                                                                                          |
 | Dinero en la BD                           | Enteros en centavos (MXN) en todas las columnas de precio y monto; `null` en personalización, envío, anticipo y precio de encargo significa "por cotizar"                                                                                                                                                                 |
 | Rol de admin                              | `public.is_admin()`: usuario autenticado con `app_metadata.role = 'admin'` (solo se asigna con la llave secreta)                                                                                                                                                                                                          |
-| Permisos de tablas nuevas                 | Las tablas y funciones nuevas en `public` nacen cerradas (default privileges revocados): cada migración da sus grants y activa RLS                                                                                                                                                                                        |
+| Permisos de tablas nuevas                 | Las tablas nuevas en `public` nacen cerradas; las funciones no (PUBLIC conserva `EXECUTE`), así que cada migración hace `revoke execute ... from public, anon` en sus funciones y da sus grants                                                                                                                           |
 | Precio de encargo                         | `custom_requests.precio_final` (null = por cotizar), reflejado en `orders.subtotal`; la BD valida `total = subtotal − descuentos + personalización + envío`                                                                                                                                                               |
 | Folio en BD                               | `next_folio(prefijo, fecha)` solo para `service_role`; periodo en hora de `America/Mexico_City`; error si pasa de 9999 en un mes                                                                                                                                                                                          |
 | Tallas de playera y sudadera              | `CH, M, G, XG, XXG`                                                                                                                                                                                                                                                                                                       |
@@ -421,7 +421,7 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 - [ ] Datos semilla: categorías, tipos de prenda, prendas base, plantillas de WhatsApp, ajustes
 - [x] Usuario admin
 
-### Fase 2 — Admin: catálogo 🟡
+### Fase 2 — Admin: catálogo ✅
 
 - [x] Login de admin y layout del panel
 - [x] CRUD de categorías (con categoría estrella) y colecciones
@@ -430,7 +430,7 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 - [x] CRUD de productos (mockup y foto real) con colores, stock / bajo pedido
 - [x] Recargos por talla y guía de tallas por tipo de prenda
 
-### Fase 3 — Tienda: catálogo ⬜
+### Fase 3 — Tienda: catálogo 🟡
 
 - [ ] Layout: navbar, submenú de subcategorías, footer
 - [ ] Home (destacados, colecciones, CTA de encargos)
@@ -526,3 +526,4 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 | 2026-10-22 | Fase 2     | ✅ Subida de diseños con vista previa en todos los colores                                                                   | `/admin/disenos`: sube la versión para prendas oscuras y, opcional, la de prendas claras. El navegador reduce el PNG a 1600 px antes de subirlo (las peticiones en Vercel no pasan de ~4.5 MB) y el servidor valida que sea PNG con transparencia de al menos 400 px y lo sube a la carpeta privada de ImageKit. Vista previa en las 19 playeras con la versión que toca a cada color. Al reemplazar o eliminar se borran los archivos viejos. Probado contra ImageKit real: privados a 1600 px, URL sin firma 403 y nada huérfano tras eliminar. Pendiente menor: si falla el guardado justo después de subir, el borrado de limpieza puede no encontrar el archivo porque ImageKit tarda unos segundos en indexarlo |
 | 2026-10-22 | Fase 2     | ✅ Recargos por talla y guía de tallas por tipo de prenda                                                                    | `/admin/tipos-de-prenda`: precio normal, de mayoreo y piezas mínimas; tallas ordenables (agregar, quitar, subir y bajar) con recargo y medidas de ancho y largo. El nombre queda fijo después de crear el tipo porque define la carpeta de sus fotos. Utilidad de dinero compartida en `src/lib/domain/money.ts`. Probado en navegador sin dejar cambios: Playera quedó igual que antes. Corregido un desborde horizontal en móvil (un `sr-only` con posición absoluta fuera del contenedor con scroll)                                                                                                                                                                                                               |
 | 2026-10-22 | Fase 2     | ✅ CRUD de productos (mockup y foto real) con colores y stock / bajo pedido                                                  | `/admin/productos`: lista con buscador, precio efectivo y mostrar/ocultar. Formulario compartido: datos, categoría, colecciones, mockup (prenda, diseño, colores con vista previa en vivo) o fotos reales, precio propio o heredado, inventario por color y talla. Fotos: subir, ordenar y borrar. Migración `guardar_producto` (`db:smoke` 55/55). Probado en navegador de punta a punta sin dejar datos ni archivos; el barrido de huérfanos borró 5 archivos viejos (3 de una prueba anterior y 2 del spike de la Fase 0)                                                                                                                                                                                          |
+| 2026-10-22 | Fase 2     | ✅ Cierre de la fase con revisión de seguridad y de UI                                                                       | Seguridad: el barrido de huérfanos ahora pagina y compara el conteo exacto de referencias (antes un corte silencioso de 1000 filas podía borrar archivos en uso); `revoke execute` de `save_product` a PUBLIC; tope de 15 MB y 40 megapíxeles en subidas; fotos de producto en carpeta privada; se quitó el spike de la Fase 0. UI: páginas de error del panel, barra de carga al navegar, área táctil del editor, `accent-gold`. Pendiente: diálogos de confirmación con el tema (hoy `confirm()` del navegador)                                                                                                                                                                                                     |

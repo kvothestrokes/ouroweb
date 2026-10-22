@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { LoaderCircle } from '@lucide/svelte';
+	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
@@ -34,14 +35,7 @@
 				};
 			}}
 		>
-			{#if form?.message}
-				<p
-					role="alert"
-					class="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
-				>
-					{form.message}
-				</p>
-			{/if}
+			<FormMessage error={form?.message} />
 
 			<div class="flex flex-col gap-2">
 				<Label for="email">Correo</Label>

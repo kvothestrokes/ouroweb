@@ -15,3 +15,9 @@ export function orphanFiles(
 		return !Number.isNaN(created) && now.getTime() - created > graceMs && !used.has(file.filePath);
 	});
 }
+
+/** True when the file sits directly in `folder` (not in a subfolder or a look-alike folder). */
+export function inFolder(filePath: string, folder: string): boolean {
+	const prefix = `${folder}/`;
+	return filePath.startsWith(prefix) && !filePath.slice(prefix.length).includes('/');
+}

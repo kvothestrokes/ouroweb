@@ -159,8 +159,8 @@ export async function deleteProduct(db: Db, id: string): Promise<string | null> 
 		.from('product_images')
 		.select('imagekit_path')
 		.eq('product_id', id);
-	const { error } = await db.from('products').delete().eq('id', id);
-	if (error) return 'No pudimos eliminarlo. Intenta de nuevo.';
+	const { data: deleted, error } = await db.from('products').delete().eq('id', id).select('id');
+	if (error || deleted.length === 0) return 'No pudimos eliminarlo. Intenta de nuevo.';
 	await Promise.all((images ?? []).map((image) => deleteImageByPath(image.imagekit_path)));
 	return null;
 }

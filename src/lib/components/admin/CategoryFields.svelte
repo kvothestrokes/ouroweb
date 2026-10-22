@@ -81,7 +81,7 @@
 			type="checkbox"
 			name="activo"
 			checked={values.activo ?? false}
-			class="size-5 accent-[var(--gold)]"
+			class="size-5 accent-gold"
 		/>
 		Visible en la tienda
 	</label>
@@ -90,7 +90,7 @@
 			type="checkbox"
 			name="es_estrella"
 			checked={values.es_estrella ?? false}
-			class="size-5 accent-[var(--gold)]"
+			class="size-5 accent-gold"
 		/>
 		Estrella de su categoría (solo subcategorías)
 	</label>
