@@ -38,7 +38,8 @@ export const actions = {
 		// A valid account without the admin role must not keep a session.
 		if (!(await locals.getAdmin())) {
 			await locals.supabase.auth.signOut();
-			return fail(403, { email, message: INVALID });
+			// Same status as bad credentials, so the response never confirms a valid password.
+			return fail(400, { email, message: INVALID });
 		}
 
 		redirect(303, safeAdminRedirect(url.searchParams.get('redirectTo')));

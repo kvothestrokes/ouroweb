@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$app/env/public';
-import { adminFromClaims, isAdminRoute } from '#lib/server/admin-auth.js';
+import { adminFromClaims, isAdminArea, isPanelRequest } from '#lib/server/admin-auth.js';
 import type { Database } from '#lib/types/database.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -34,17 +34,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return error ? null : adminFromClaims(data?.claims);
 	};
 
-	const { pathname } = event.url;
-	const isPanel = isAdminRoute(pathname);
-	if (isPanel || pathname.startsWith('/admin')) {
-		event.locals.admin = await event.locals.getAdmin();
-	} else {
-		event.locals.admin = null;
-	}
+	const request = { routeId: event.route.id, pathname: event.url.pathname };
+	const isPanel = isPanelRequest(request);
+	const inAdminArea = isAdminArea(request);
+	event.locals.admin = inAdminArea ? await event.locals.getAdmin() : null;
 
 	// The guard lives here, not in a layout load: form actions do not run parent loads.
 	if (isPanel && !event.locals.admin) {
-		const target = pathname + event.url.search;
+		const target = event.url.pathname + event.url.search;
 		redirect(303, `/admin/login?redirectTo=${encodeURIComponent(target)}`);
 	}
 
@@ -53,7 +50,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			name === 'content-range' || name === 'x-supabase-api-version'
 	});
 
-	if (pathname.startsWith('/admin')) {
+	if (inAdminArea) {
 		response.headers.set('cache-control', 'private, no-store');
 		response.headers.set('x-robots-tag', 'noindex, nofollow');
 	}

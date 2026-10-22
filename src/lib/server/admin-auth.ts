@@ -10,6 +10,49 @@ export function isAdminRoute(pathname: string): boolean {
 	return path === '/admin' || path.startsWith('/admin/');
 }
 
+const ADMIN_ROUTE = /^\/admin(\/|$)/;
+
+/**
+ * True when the request must be guarded. Decides on the route SvelteKit resolved, because
+ * it routes on the decoded path: `/%61dmin` reaches the `/admin` route while the raw
+ * `url.pathname` does not start with `/admin`. Unmatched paths are decoded as a fallback,
+ * and malformed percent-encoding fails closed.
+ *
+ * Remote functions (`.remote.ts`) do not go through this route check: any admin remote
+ * function must call `locals.getAdmin()` itself.
+ */
+export function isPanelRequest({
+	routeId,
+	pathname
+}: {
+	routeId: string | null;
+	pathname: string;
+}): boolean {
+	if (routeId === LOGIN_PATH) return false;
+	if (routeId !== null && ADMIN_ROUTE.test(routeId)) return true;
+	return isAdminRoute(decodedPath(pathname) ?? '/admin');
+}
+
+/** True for any `/admin` request, login included (for headers and the admin lookup). */
+export function isAdminArea({
+	routeId,
+	pathname
+}: {
+	routeId: string | null;
+	pathname: string;
+}): boolean {
+	if (routeId !== null && ADMIN_ROUTE.test(routeId)) return true;
+	return ADMIN_ROUTE.test(decodedPath(pathname) ?? '/admin');
+}
+
+function decodedPath(pathname: string): string | null {
+	try {
+		return decodeURI(pathname);
+	} catch {
+		return null;
+	}
+}
+
 /**
  * Only `app_metadata` counts: it is written exclusively with the secret key, while
  * `user_metadata` can be edited by the user. Mirrors `public.is_admin()` in the database.

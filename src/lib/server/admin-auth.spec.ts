@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminFromClaims, isAdminRoute, safeAdminRedirect } from './admin-auth.js';
+import { adminFromClaims, isAdminRoute, isPanelRequest, safeAdminRedirect } from './admin-auth.js';
 
 describe('isAdminRoute', () => {
 	it('protects the panel and its subpaths', () => {
@@ -48,5 +48,25 @@ describe('safeAdminRedirect', () => {
 		expect(safeAdminRedirect('/admin/../checkout')).toBe('/admin');
 		expect(safeAdminRedirect('/administracion')).toBe('/admin');
 		expect(safeAdminRedirect('/admin/login')).toBe('/admin');
+	});
+});
+
+describe('isPanelRequest', () => {
+	it('uses the resolved route, so percent-encoded paths cannot skip the guard', () => {
+		// SvelteKit routes on the decoded path: /%61dmin resolves to the /admin route.
+		expect(isPanelRequest({ routeId: '/admin/(panel)', pathname: '/%61dmin' })).toBe(true);
+		expect(isPanelRequest({ routeId: '/admin/logout', pathname: '/%61dmin/logout' })).toBe(true);
+		expect(isPanelRequest({ routeId: null, pathname: '/%61dmin/productos' })).toBe(true);
+	});
+
+	it('keeps the login page and the store public', () => {
+		expect(isPanelRequest({ routeId: '/admin/login', pathname: '/admin/login' })).toBe(false);
+		expect(isPanelRequest({ routeId: '/admin/login', pathname: '/%61dmin/login' })).toBe(false);
+		expect(isPanelRequest({ routeId: '/', pathname: '/' })).toBe(false);
+		expect(isPanelRequest({ routeId: null, pathname: '/c/ropa' })).toBe(false);
+	});
+
+	it('fails closed on malformed percent-encoding', () => {
+		expect(isPanelRequest({ routeId: null, pathname: '/%E0%A4%A' })).toBe(true);
 	});
 });
