@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { parseCheckout } from '#lib/domain/checkout.js';
 import { placeOrder } from '#lib/server/orders.js';
 import { allowRequest } from '#lib/server/rate-limit.js';
+import { readBodyLimited } from '#lib/server/read-body.js';
 import type { RequestHandler } from './$types';
 
 const MAX_BODY_BYTES = 32 * 1024;
@@ -20,8 +21,8 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		return json({ message: 'Demasiados intentos. Espera unos minutos.' }, { status: 429 });
 	}
 
-	const body = await request.text();
-	if (body.length > MAX_BODY_BYTES) error(413, 'Pedido demasiado grande');
+	const body = await readBodyLimited(request, MAX_BODY_BYTES);
+	if (body === null) error(413, 'Pedido demasiado grande');
 	let input: unknown;
 	try {
 		input = JSON.parse(body);

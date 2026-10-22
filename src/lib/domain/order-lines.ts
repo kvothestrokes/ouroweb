@@ -37,6 +37,13 @@ export function buildOrderLines(
 		const product = products.find((candidate) => candidate.slug === item.slug);
 		if (!product || product.precioBase === null) return { ok: false, message: UNAVAILABLE };
 
+		if (item.personalizacion && !product.permitePersonalizar) {
+			return {
+				ok: false,
+				message: `${product.nombre} no se puede personalizar. Quita el texto e intenta de nuevo.`
+			};
+		}
+
 		const color = product.colorOptions.find((option) => option.key === item.color) ?? null;
 		const needsColor = product.colorOptions.length > 0;
 		const needsSize = product.todasLasTallas.length > 0;

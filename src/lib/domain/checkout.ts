@@ -18,17 +18,35 @@ export function deliveryLabel(method: DeliveryMethod): string {
 export const MAX_ITEMS = 30;
 export const MAX_QUANTITY = 99;
 
-const text = (max: number) => z.string().trim().max(max);
+// Control and bidi-override characters could fake lines in the WhatsApp message or in the panel.
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const CONTROL = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+
+/** Free text from customers: no control characters; one line unless `multiline`. */
+export function cleanText(value: string, multiline = false): string {
+	const normalized = value.replace(/\r\n?/g, '\n');
+	const flat = multiline ? normalized : normalized.replace(/\n+/g, ' ');
+	return flat
+		.replace(CONTROL, '')
+		.replace(/[ \t]+/g, ' ')
+		.trim();
+}
+
+const text = (max: number, { multiline = false, min = 0 } = {}) =>
+	z
+		.string()
+		.transform((value) => cleanText(value, multiline))
+		.pipe(z.string().min(min).max(max));
 
 const addressSchema = z.object({
-	calle: text(120).min(1),
-	colonia: text(80).min(1),
+	calle: text(120, { min: 1 }),
+	colonia: text(80, { min: 1 }),
 	cp: z
 		.string()
 		.trim()
 		.regex(/^\d{5}$/),
-	ciudad: text(80).min(1),
-	estado: text(60).min(1),
+	ciudad: text(80, { min: 1 }),
+	estado: text(60, { min: 1 }),
 	referencias: text(200).default('')
 });
 
@@ -64,7 +82,7 @@ const schema = z.object({
 	whatsapp: z.string().max(30),
 	metodoEntrega: z.enum(['recoger', 'domicilio', 'paqueteria']),
 	direccion: z.unknown().optional(),
-	notas: text(500).default(''),
+	notas: text(500, { multiline: true }).default(''),
 	items: z.array(z.unknown()).max(MAX_ITEMS)
 });
 

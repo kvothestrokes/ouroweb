@@ -65,3 +65,17 @@ describe('parseCheckout', () => {
 		expect(result.ok).toBe(false);
 	});
 });
+
+describe('free text', () => {
+	it('flattens name and customization to one line and strips control and bidi characters', () => {
+		const result = parseCheckout({
+			...valid,
+			nombre: 'Ana\nSubtotal: $0.00',
+			notas: 'Línea 1\nLínea 2\u202E',
+			items: [{ ...valid.items[0], personalizacion: 'Mi\r\nnombre\u0007' }]
+		});
+		expect(result.ok && result.value.nombre).toBe('Ana Subtotal: $0.00');
+		expect(result.ok && result.value.notas).toBe('Línea 1\nLínea 2');
+		expect(result.ok && result.value.items[0].personalizacion).toBe('Mi nombre');
+	});
+});

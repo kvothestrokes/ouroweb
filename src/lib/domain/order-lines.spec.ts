@@ -100,6 +100,12 @@ describe('buildOrderLines', () => {
 		expect(buildOrderLines([item({ slug: 'stock', color: 'rojo' })], [inStock]).ok).toBe(false);
 	});
 
+	it('rejects customization on products that do not allow it', () => {
+		const plain = toProductDetail(row({ permite_personalizar: false }));
+		expect(buildOrderLines([item({ personalizacion: 'Ana' })], [plain]).ok).toBe(false);
+		expect(buildOrderLines([item()], [plain]).ok).toBe(true);
+	});
+
 	it('rejects products without a price', () => {
 		const noPrice = toProductDetail(
 			row({ garment_types: null, product_colors: [], precio_base: null })

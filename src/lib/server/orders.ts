@@ -97,6 +97,13 @@ export async function placeOrder(checkout: Checkout): Promise<OrderResult> {
 		p_items: lines.value.items
 	});
 	if (error || !folio) {
+		if (error?.message === 'store_busy') {
+			return {
+				ok: false,
+				status: 429,
+				message: 'Estamos recibiendo muchos pedidos. Intenta en un rato o escríbenos por WhatsApp.'
+			};
+		}
 		if (error?.message === 'too_many_orders') {
 			return {
 				ok: false,

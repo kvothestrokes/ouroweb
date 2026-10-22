@@ -541,6 +541,41 @@ for (const table of PRIVATE_TABLES) {
 		spam?.message === 'too_many_orders',
 		spam?.message
 	);
+
+	const { error: negative } = await admin.rpc('create_order', {
+		p_order: { ...order, cliente_whatsapp: '520000000001', subtotal: -17000 },
+		p_items: [{ ...items[0], cantidad: -1 }],
+		p_fecha: fecha
+	});
+	check('create_order rejects non-positive quantities', Boolean(negative), negative?.message);
+	const { error: bigDiscount } = await admin.rpc('create_order', {
+		p_order: { ...order, cliente_whatsapp: '520000000001', desc_mayoreo: 40000 },
+		p_items: items,
+		p_fecha: fecha
+	});
+	check(
+		'create_order rejects a discount larger than the subtotal',
+		Boolean(bigDiscount),
+		bigDiscount?.message
+	);
+
+	// Global cap so random phone numbers cannot burn the 9999 monthly folios.
+	await cleanup();
+	const burst = await Promise.all(
+		Array.from({ length: 61 }, (_, i) =>
+			admin.rpc('create_order', {
+				p_order: { ...order, cliente_whatsapp: `5299${String(i).padStart(8, '0')}` },
+				p_items: items,
+				p_fecha: fecha
+			})
+		)
+	);
+	const busy = burst.filter((result) => result.error?.message === 'store_busy').length;
+	check(
+		'create_order caps pending orders per hour across all numbers',
+		busy === 1,
+		`${busy} rejected`
+	);
 	await cleanup();
 }
 
