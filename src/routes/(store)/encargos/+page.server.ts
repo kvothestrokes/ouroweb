@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { customRequestFromForm } from '#lib/domain/custom-request.js';
 import { placeCustomOrder } from '#lib/server/custom-orders.js';
+import { allowDurable } from '#lib/server/durable-rate-limit.js';
 import { allowRequest } from '#lib/server/rate-limit.js';
 import { loadCustomRequestTypes, storeData } from '#lib/server/store.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -12,7 +13,11 @@ export const load: PageServerLoad = async () => ({
 export const actions = {
 	// Multipart form post: SvelteKit's origin check covers CSRF.
 	enviar: async ({ request, getClientAddress }) => {
-		if (!allowRequest(`encargo:${getClientAddress()}`, { limit: 5, windowMs: 10 * 60 * 1000 })) {
+		const ip = getClientAddress();
+		if (
+			!allowRequest(`encargo:${ip}`, { limit: 5, windowMs: 10 * 60 * 1000 }) ||
+			!(await allowDurable(`encargo:${ip}`, { limit: 5, windowSeconds: 600, failOpen: true }))
+		) {
 			return fail(429, { message: 'Demasiados intentos. Espera unos minutos.' });
 		}
 		const form = await request.formData();

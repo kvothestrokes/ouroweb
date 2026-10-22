@@ -112,7 +112,7 @@
 					type="search"
 					placeholder="Buscar"
 					value={page.url.pathname === '/buscar' ? (page.url.searchParams.get('q') ?? '') : ''}
-					class="h-11 w-48 rounded-full border border-border bg-surface pr-3 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
+					class="h-11 w-48 rounded-full border border-border bg-surface pr-3 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-purple-light"
 				/>
 			</form>
 			<a

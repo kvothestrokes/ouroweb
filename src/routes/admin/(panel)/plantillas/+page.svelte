@@ -108,12 +108,12 @@
 					rows="14"
 					maxlength="2000"
 					class="rounded-md border border-border bg-transparent p-3 font-mono text-sm"></textarea>
-				<div class="flex flex-wrap gap-1.5" aria-label="Insertar variable">
+				<div class="flex flex-wrap gap-1.5" role="group" aria-label="Insertar variable">
 					{#each VARIABLES as variable (variable)}
 						<button
 							type="button"
 							onclick={() => insert(variable)}
-							class="min-h-9 rounded-full border border-border px-2.5 text-xs text-muted-foreground hover:border-purple-light hover:text-foreground"
+							class="min-h-11 rounded-full border border-border px-2.5 text-xs text-muted-foreground hover:border-purple-light hover:text-foreground"
 						>
 							{variable}
 						</button>

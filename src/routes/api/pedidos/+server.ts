@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { parseCheckout } from '#lib/domain/checkout.js';
 import { placeOrder } from '#lib/server/orders.js';
+import { allowDurable } from '#lib/server/durable-rate-limit.js';
 import { allowRequest } from '#lib/server/rate-limit.js';
 import { readBodyLimited } from '#lib/server/read-body.js';
 import type { RequestHandler } from './$types';
@@ -16,8 +17,12 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) {
 		error(413, 'Pedido demasiado grande');
 	}
-	// Best effort per server instance; the database also caps orders per WhatsApp number.
-	if (!allowRequest(`pedido:${getClientAddress()}`, { limit: 10, windowMs: 10 * 60 * 1000 })) {
+	// Memory first (cheap, per instance), then the shared limit in the database.
+	const ip = getClientAddress();
+	if (
+		!allowRequest(`pedido:${ip}`, { limit: 10, windowMs: 10 * 60 * 1000 }) ||
+		!(await allowDurable(`pedido:${ip}`, { limit: 10, windowSeconds: 600, failOpen: true }))
+	) {
 		return json({ message: 'Demasiados intentos. Espera unos minutos.' }, { status: 429 });
 	}
 

@@ -21,7 +21,6 @@
 	let sending = $state(false);
 	let fileError = $state<string | null>(null);
 	let references = $state<{ file: File; url: string }[]>([]);
-	let fileInput = $state<HTMLInputElement>();
 
 	/** Vercel rejects requests over ~4.5 MB; keep room for the text fields. */
 	const MAX_UPLOAD_TOTAL = 4 * 1024 * 1024;
@@ -52,8 +51,11 @@
 		references.splice(index, 1);
 	}
 
+	/** Moves focus to the success heading so screen readers announce it. */
+	const focusOnMount = (node: HTMLElement) => node.focus();
+
 	const field =
-		'h-12 w-full rounded-lg border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:border-purple-light focus:outline-none';
+		'h-12 w-full rounded-lg border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:border-purple-light';
 	const label = 'flex flex-col gap-1.5 text-sm';
 </script>
 
@@ -69,7 +71,9 @@
 	{#if form?.placed}
 		<section class="flex flex-col items-center gap-5 text-center">
 			<CircleCheck size={56} stroke-width={1.5} class="text-success" />
-			<h1 class="text-3xl md:text-4xl">¡Recibimos tu encargo!</h1>
+			<h1 class="text-3xl md:text-4xl" tabindex="-1" {@attach focusOnMount}>
+				¡Recibimos tu encargo!
+			</h1>
 			<div class="rounded-xl border border-gold/40 bg-surface px-6 py-4">
 				<p class="text-xs tracking-widest text-muted-foreground uppercase">Tu folio</p>
 				<p class="font-display text-3xl text-gold">{form.placed.folio}</p>
@@ -129,7 +133,7 @@
 			}}
 		>
 			<fieldset class="flex flex-col gap-3">
-				<legend class="mb-2 font-display text-lg">¿Qué te hacemos?</legend>
+				<legend class="mb-2 font-display text-lg">¿Qué quieres que hagamos?</legend>
 				{#if data.types.length}
 					<div class="grid gap-3 sm:grid-cols-2">
 						{#each data.types as type (type.id)}
@@ -186,7 +190,7 @@
 						maxlength="1000"
 						rows="5"
 						placeholder="Ej. Un termo negro con el escudo de mi equipo grabado y mi nombre abajo."
-						class="rounded-lg border border-border bg-surface p-3 text-base placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
+						class="rounded-lg border border-border bg-surface p-3 text-base placeholder:text-muted-foreground focus:border-purple-light"
 					></textarea>
 				</label>
 				<div class="grid gap-4 sm:grid-cols-2">
@@ -236,29 +240,26 @@
 							</button>
 						</div>
 					{/each}
-					{#if references.length < MAX_REFERENCE_IMAGES}
-						<button
-							type="button"
-							onclick={() => fileInput?.click()}
-							class="flex size-24 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-purple-light hover:text-foreground"
-						>
-							<ImagePlus size={22} stroke-width={1.75} />
-							Agregar
-						</button>
-					{/if}
+					<!-- A real label around the input: works with the keyboard and without JavaScript. -->
+					<label
+						class={cn(
+							'flex size-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-purple-light hover:text-foreground has-focus-visible:outline-2 has-focus-visible:outline-ring',
+							references.length >= MAX_REFERENCE_IMAGES && 'hidden'
+						)}
+					>
+						<ImagePlus size={22} stroke-width={1.75} aria-hidden="true" />
+						Agregar
+						<input
+							type="file"
+							name="referencias"
+							accept="image/jpeg,image/png,image/webp"
+							multiple
+							onchange={addReferences}
+							aria-label="Agregar imágenes de referencia"
+							class="sr-only"
+						/>
+					</label>
 				</div>
-				<!-- Without JavaScript this input is what gets sent. -->
-				<input
-					bind:this={fileInput}
-					type="file"
-					name="referencias"
-					accept="image/jpeg,image/png,image/webp"
-					multiple
-					onchange={addReferences}
-					class="sr-only"
-					tabindex="-1"
-					aria-hidden="true"
-				/>
 				{#if fileError}<p class="text-sm text-danger" role="alert">{fileError}</p>{/if}
 			</fieldset>
 

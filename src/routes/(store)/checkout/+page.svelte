@@ -6,7 +6,7 @@
 	import ExternalLink from '#lib/components/store/ExternalLink.svelte';
 	import OrderSummary from '#lib/components/store/OrderSummary.svelte';
 	import { cartQuote, cartRows, toCheckoutItems } from '#lib/client/cart-view.js';
-	import { DELIVERY_METHODS, type DeliveryMethod } from '#lib/domain/checkout.js';
+	import { DELIVERY_METHODS, parseCheckout, type DeliveryMethod } from '#lib/domain/checkout.js';
 	import { formatMoney } from '#lib/domain/money.js';
 	import type { PlacedOrder } from '#lib/server/orders.js';
 	import { cart } from '#lib/stores/cart.svelte.js';
@@ -50,27 +50,56 @@
 	const needsAddress = $derived(metodoEntrega !== 'recoger');
 	const hasCustomization = $derived(cart.lines.some((line) => line.personalizacion));
 
+	/** Which field a validation message belongs to. */
+	const FIELD_FOR: Record<string, 'nombre' | 'whatsapp' | 'direccion'> = {
+		'Escribe tu nombre.': 'nombre',
+		'Escribe tu WhatsApp a 10 dígitos.': 'whatsapp',
+		'Completa tu dirección de entrega.': 'direccion'
+	};
+	let errorField = $state<'nombre' | 'whatsapp' | 'direccion' | null>(null);
+
+	function showError(message: string) {
+		errorMessage = message;
+		errorField = FIELD_FOR[message] ?? null;
+		if (!errorField) return;
+		const id =
+			errorField === 'direccion'
+				? (['calle', 'colonia', 'cp', 'ciudad', 'estado'] as const)
+						.map((key) => `checkout-${key}`)
+						.find((key) => !(document.getElementById(key) as HTMLInputElement | null)?.value.trim())
+				: `checkout-${errorField}`;
+		document.getElementById(id ?? 'checkout-calle')?.focus();
+	}
+
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
 		if (sending) return;
+		const payload = {
+			nombre,
+			whatsapp,
+			metodoEntrega,
+			direccion: needsAddress ? direccion : null,
+			notas,
+			items: toCheckoutItems(cart.lines)
+		};
+		// Same validation as the server, to point at the field before sending.
+		const local = parseCheckout(payload);
+		if (!local.ok) {
+			showError(local.message);
+			return;
+		}
 		sending = true;
 		errorMessage = null;
+		errorField = null;
 		try {
 			const response = await fetch('/api/pedidos', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({
-					nombre,
-					whatsapp,
-					metodoEntrega,
-					direccion: needsAddress ? direccion : null,
-					notas,
-					items: toCheckoutItems(cart.lines)
-				})
+				body: JSON.stringify(payload)
 			});
 			const body = await response.json().catch(() => null);
 			if (!response.ok) {
-				errorMessage = body?.message ?? 'No pudimos registrar tu pedido. Intenta de nuevo.';
+				showError(body?.message ?? 'No pudimos registrar tu pedido. Intenta de nuevo.');
 				return;
 			}
 			placed = body as PlacedOrder;
@@ -88,8 +117,11 @@
 		}
 	}
 
+	/** Moves focus to the success heading so screen readers announce it. */
+	const focusOnMount = (node: HTMLElement) => node.focus();
+
 	const field =
-		'h-12 w-full rounded-lg border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:border-purple-light focus:outline-none';
+		'h-12 w-full rounded-lg border border-border bg-surface px-3 text-base text-foreground placeholder:text-muted-foreground focus:border-purple-light';
 	const label = 'flex flex-col gap-1.5 text-sm';
 </script>
 
@@ -105,7 +137,7 @@
 		<!-- Success (spec 6.1, step 5) -->
 		<section class="mx-auto flex max-w-xl flex-col items-center gap-5 text-center">
 			<CircleCheck size={56} stroke-width={1.5} class="text-success" />
-			<h1 class="text-3xl md:text-4xl">¡Pedido registrado!</h1>
+			<h1 class="text-3xl md:text-4xl" tabindex="-1" {@attach focusOnMount}>¡Pedido registrado!</h1>
 			<div class="rounded-xl border border-gold/40 bg-surface px-6 py-4">
 				<p class="text-xs tracking-widest text-muted-foreground uppercase">Tu folio</p>
 				<p class="font-display text-3xl text-gold">{placed.folio}</p>
@@ -177,17 +209,32 @@
 			<form
 				id="checkout"
 				onsubmit={submit}
-				oninput={() => (errorMessage = null)}
+				oninput={() => {
+					errorMessage = null;
+					errorField = null;
+				}}
 				onchange={() => (errorMessage = null)}
 				class="flex flex-col gap-8"
 				novalidate
 			>
+				{#if errorMessage && errorField}
+					<p
+						id="checkout-error"
+						class="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
+						role="alert"
+					>
+						{errorMessage}
+					</p>
+				{/if}
 				<fieldset class="flex flex-col gap-4">
 					<legend class="mb-2 font-display text-lg">Tus datos</legend>
 					<label class={label}>
 						Nombre
 						<input
+							id="checkout-nombre"
 							bind:value={nombre}
+							aria-invalid={errorField === 'nombre' || undefined}
+							aria-describedby={errorField === 'nombre' ? 'checkout-error' : undefined}
 							name="nombre"
 							autocomplete="name"
 							required
@@ -199,14 +246,18 @@
 						<label class={label}>
 							WhatsApp
 							<input
+								id="checkout-whatsapp"
 								bind:value={whatsapp}
+								aria-invalid={errorField === 'whatsapp' || undefined}
 								name="whatsapp"
 								type="tel"
 								inputmode="numeric"
 								autocomplete="tel-national"
 								placeholder="10 dígitos"
 								required
-								aria-describedby="whatsapp-hint"
+								aria-describedby={errorField === 'whatsapp'
+									? 'whatsapp-hint checkout-error'
+									: 'whatsapp-hint'}
 								class={field}
 							/>
 						</label>
@@ -252,7 +303,9 @@
 						<label class={cn(label, 'sm:col-span-2')}>
 							Calle y número
 							<input
+								id="checkout-calle"
 								bind:value={direccion.calle}
+								aria-invalid={(errorField === 'direccion' && !direccion.calle.trim()) || undefined}
 								autocomplete="address-line1"
 								required
 								maxlength="120"
@@ -262,7 +315,10 @@
 						<label class={label}>
 							Colonia
 							<input
+								id="checkout-colonia"
 								bind:value={direccion.colonia}
+								aria-invalid={(errorField === 'direccion' && !direccion.colonia.trim()) ||
+									undefined}
 								autocomplete="address-line2"
 								required
 								maxlength="80"
@@ -272,7 +328,9 @@
 						<label class={label}>
 							Código postal
 							<input
+								id="checkout-cp"
 								bind:value={direccion.cp}
+								aria-invalid={(errorField === 'direccion' && !direccion.cp.trim()) || undefined}
 								inputmode="numeric"
 								autocomplete="postal-code"
 								maxlength="5"
@@ -283,7 +341,9 @@
 						<label class={label}>
 							Ciudad
 							<input
+								id="checkout-ciudad"
 								bind:value={direccion.ciudad}
+								aria-invalid={(errorField === 'direccion' && !direccion.ciudad.trim()) || undefined}
 								autocomplete="address-level2"
 								required
 								maxlength="80"
@@ -293,7 +353,9 @@
 						<label class={label}>
 							Estado
 							<input
+								id="checkout-estado"
 								bind:value={direccion.estado}
+								aria-invalid={(errorField === 'direccion' && !direccion.estado.trim()) || undefined}
 								autocomplete="address-level1"
 								required
 								maxlength="60"
@@ -319,7 +381,7 @@
 						maxlength="500"
 						rows="3"
 						placeholder="¿Algo que debamos saber? Fecha en que lo necesitas, etc."
-						class="rounded-lg border border-border bg-surface p-3 text-base placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
+						class="rounded-lg border border-border bg-surface p-3 text-base placeholder:text-muted-foreground focus:border-purple-light"
 					></textarea>
 				</label>
 			</form>
@@ -338,7 +400,9 @@
 								{#if row.problem}<span class="block text-xs text-danger">{row.problem}</span>{/if}
 							</span>
 							{#if row.unitPrice !== null}
-								<span class="tabular-nums">{formatMoney(row.unitPrice * row.line.cantidad)}</span>
+								<span class="font-semibold text-gold tabular-nums"
+									>{formatMoney(row.unitPrice * row.line.cantidad)}</span
+								>
 							{/if}
 						</li>
 					{/each}
@@ -350,7 +414,7 @@
 					personalizacion={hasCustomization}
 				>
 					<div aria-live="polite">
-						{#if errorMessage}
+						{#if errorMessage && !errorField}
 							<p class="text-sm text-danger" role="alert">{errorMessage}</p>
 						{:else if !quote.ok}
 							<p class="text-sm text-danger" role="alert">{quote.message}</p>

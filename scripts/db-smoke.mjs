@@ -804,6 +804,37 @@ for (const table of PRIVATE_TABLES) {
 		p_nota: null
 	});
 	check('parcel orders cannot go to pickup', Boolean(wrongBranch), wrongBranch?.message);
+	await admin.rpc('add_payment', {
+		p_order_id: id,
+		p_tipo: 'abono',
+		p_monto: 27000,
+		p_metodo: 'Efectivo',
+		p_fecha: null
+	});
+	const { error: belowPaid } = await admin.rpc('quote_order', {
+		p_order_id: id,
+		p_envio: 0,
+		p_personalizacion: 0,
+		p_precio_final: null,
+		p_anticipo: 27000
+	});
+	check(
+		'quote_order cannot go below what was paid',
+		belowPaid?.message === 'quote_below_paid',
+		belowPaid?.message
+	);
+	const { error: bigDeposit } = await admin.rpc('quote_order', {
+		p_order_id: id,
+		p_envio: 15000,
+		p_personalizacion: 5000,
+		p_precio_final: null,
+		p_anticipo: 99000
+	});
+	check(
+		'quote_order rejects a deposit above the total',
+		bigDeposit?.message === 'deposit_above_total',
+		bigDeposit?.message
+	);
 	const { data: events } = await admin
 		.from('order_events')
 		.select('estado')
@@ -816,6 +847,71 @@ for (const table of PRIVATE_TABLES) {
 		events?.map((event) => event.estado).join(',')
 	);
 	await cleanup();
+}
+
+// Durable rate limits shared by every server instance (Fase 7).
+{
+	const key = `smoke:${Date.now()}`;
+	const { error: anonError } = await anon.rpc('hit_rate_limit', {
+		p_key: key,
+		p_limit: 2,
+		p_window_seconds: 60
+	});
+	check('anon cannot call hit_rate_limit', Boolean(anonError), anonError?.code);
+	const hits = [];
+	for (let i = 0; i < 3; i++) {
+		const { data } = await admin.rpc('hit_rate_limit', {
+			p_key: key,
+			p_limit: 2,
+			p_window_seconds: 60
+		});
+		hits.push(data);
+	}
+	check(
+		'hit_rate_limit allows up to the limit in the window',
+		JSON.stringify(hits) === '[true,true,false]',
+		JSON.stringify(hits)
+	);
+	await admin.from('rate_limits').delete().eq('key', key);
+}
+
+// One review per order.
+{
+	const fecha = '2099-06-10T12:00:00Z';
+	await admin.from('orders').delete().like('folio', 'OUR-9906-%');
+	await admin.from('folio_counters').delete().eq('periodo', '9906');
+	const { data: folio } = await admin.rpc('create_order', {
+		p_order: {
+			cliente_nombre: 'Smoke',
+			cliente_whatsapp: '520000000006',
+			metodo_entrega: 'recoger',
+			direccion: null,
+			notas_cliente: '',
+			subtotal: 17000,
+			desc_mayoreo: 0
+		},
+		p_items: [
+			{
+				product_id: null,
+				nombre_snapshot: 'Playera',
+				color: null,
+				talla: 'M',
+				cantidad: 1,
+				precio_unitario: 17000,
+				recargo_talla: 0,
+				personalizacion_texto: null
+			}
+		],
+		p_fecha: fecha
+	});
+	const { data: order } = await admin.from('orders').select('id').eq('folio', folio).single();
+	await admin.from('reviews').insert({ order_id: order?.id, calificacion: 5, texto: 'Bien' });
+	const { error: second } = await admin
+		.from('reviews')
+		.insert({ order_id: order?.id, calificacion: 4, texto: 'Otra' });
+	check('an order takes a single review', second?.code === '23505', second?.code);
+	await admin.from('orders').delete().like('folio', 'OUR-9906-%');
+	await admin.from('folio_counters').delete().eq('periodo', '9906');
 }
 
 // Private columns of public tables: original photo paths and design ids.

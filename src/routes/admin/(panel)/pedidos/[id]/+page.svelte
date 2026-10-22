@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { ArrowLeft, MessageCircle, Send, Trash2 } from '@lucide/svelte';
+	import { ArrowLeft, ImagePlus, MessageCircle, Pencil, Send, Trash2 } from '@lucide/svelte';
 	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import ExternalLink from '#lib/components/store/ExternalLink.svelte';
 	import OrderStatusBadge from '#lib/components/admin/OrderStatusBadge.svelte';
@@ -18,12 +18,14 @@
 
 	const order = $derived(data.order);
 	let busy = $state(false);
+	let fileName = $state<string | null>(null);
 
 	const submit: SubmitFunction = () => {
 		busy = true;
-		return async ({ update }) => {
+		return async ({ update, result }) => {
 			await update();
 			busy = false;
+			if (result.type === 'success') fileName = null;
 		};
 	};
 
@@ -86,7 +88,14 @@
 	</ExternalLink>
 </div>
 
-<FormMessage error={form?.message} success={form?.success} class="mt-4" />
+<!-- Floating on phones so the result of a form at the bottom is visible. -->
+<div class="fixed inset-x-4 bottom-4 z-40 lg:static lg:inset-auto" aria-live="polite">
+	<FormMessage
+		error={form?.message}
+		success={form?.success}
+		class="mt-4 shadow-lg lg:shadow-none"
+	/>
+</div>
 
 <div class="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
 	<div class="flex flex-col gap-6">
@@ -135,7 +144,8 @@
 								</span>
 								{#if item.personalizacion_texto}
 									<span class="mt-1 block text-xs text-purple-light">
-										✏️ {item.personalizacion_texto}
+										<Pencil size={14} strokeWidth={1.75} class="mr-1 inline" aria-hidden="true" />
+										{item.personalizacion_texto}
 									</span>
 								{/if}
 							</span>
@@ -470,15 +480,21 @@
 				use:enhance={submit}
 				class="flex flex-col gap-2"
 			>
-				<Label for="archivo" class="sr-only">Imagen</Label>
-				<input
-					id="archivo"
-					name="archivo"
-					type="file"
-					accept="image/jpeg,image/png,image/webp"
-					required
-					class="min-h-11 text-sm file:mr-3 file:min-h-11 file:rounded-md file:border file:border-border file:bg-transparent file:px-3 file:text-foreground"
-				/>
+				<label
+					class="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-dashed border-border px-3 text-sm text-muted-foreground hover:border-purple-light hover:text-foreground has-focus-visible:outline-2 has-focus-visible:outline-ring"
+				>
+					<ImagePlus size={18} strokeWidth={1.75} aria-hidden="true" />
+					<span class="truncate">{fileName ?? 'Elegir imagen'}</span>
+					<input
+						id="archivo"
+						name="archivo"
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						required
+						onchange={(event) => (fileName = event.currentTarget.files?.[0]?.name ?? null)}
+						class="sr-only"
+					/>
+				</label>
 				<Input
 					name="descripcion"
 					maxlength={120}

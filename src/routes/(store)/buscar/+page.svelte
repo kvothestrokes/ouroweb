@@ -39,7 +39,7 @@
 				value={data.filters.q}
 				placeholder="Busca un personaje, anime o producto"
 				autofocus={!data.filters.q}
-				class="h-12 w-full rounded-full border border-border bg-surface pr-4 pl-11 text-base text-foreground placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
+				class="h-12 w-full rounded-full border border-border bg-surface pr-4 pl-11 text-base text-foreground placeholder:text-muted-foreground focus:border-purple-light"
 			/>
 		</form>
 	</header>

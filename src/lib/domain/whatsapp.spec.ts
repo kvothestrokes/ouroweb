@@ -14,6 +14,10 @@ describe('whatsappLink', () => {
 });
 
 describe('renderTemplate', () => {
+	it('never reads inherited keys like constructor', () => {
+		expect(renderTemplate('{{constructor}}{{__proto__}}', {})).toBe('');
+	});
+
 	it('replaces variables and blanks the unknown ones', () => {
 		expect(
 			renderTemplate('Pedido *{{folio}}* de {{nombre}} {{guia}}!', {

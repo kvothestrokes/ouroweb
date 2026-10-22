@@ -89,8 +89,14 @@ const MESSAGES: Record<string, string> = {
 	deposit_required: 'Registra primero el pago del anticipo para confirmar el pedido.',
 	payment_exceeds_balance: 'El pago es mayor que el saldo pendiente.',
 	order_closed: 'El pedido ya está cerrado.',
-	invalid_amount: 'Escribe un monto mayor a cero.'
+	invalid_amount: 'Revisa los montos: no pueden ser negativos.',
+	quote_below_paid: 'El nuevo total quedaría por debajo de lo que el cliente ya pagó.',
+	deposit_above_total: 'El anticipo no puede ser mayor que el total.',
+	discount_above_price: 'El precio del encargo no cubre los descuentos del pedido.',
+	request_not_found: 'Este encargo no tiene su descripción; revisa el pedido.'
 };
+
+const MAX_FILES = 20;
 
 const mexicoToday = () =>
 	new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
@@ -151,11 +157,14 @@ export const actions = {
 
 	guia: async ({ request, locals, params }) => {
 		const guia = cleanText(String((await request.formData()).get('guia') ?? '')).slice(0, 80);
-		const { error: updateError } = await locals.supabase
+		const { data: updated, error: updateError } = await locals.supabase
 			.from('orders')
 			.update({ guia: guia || null })
-			.eq('id', params.id);
-		if (updateError) return fail(400, { message: 'No pudimos guardar la guía.' });
+			.eq('id', params.id)
+			.not('estado', 'in', '(entregado,cancelado)')
+			.select('id')
+			.maybeSingle();
+		if (updateError || !updated) return fail(400, { message: 'No pudimos guardar la guía.' });
 		return { success: 'Guía guardada.' };
 	},
 
@@ -183,6 +192,15 @@ export const actions = {
 			.eq('id', params.id)
 			.maybeSingle();
 		if (!order) return fail(404, { message: 'Pedido no encontrado.' });
+		const { count } = await locals.supabase
+			.from('order_files')
+			.select('id', { count: 'exact', head: true })
+			.eq('order_id', params.id);
+		if ((count ?? 0) >= MAX_FILES) {
+			return fail(400, {
+				message: `Cada pedido guarda hasta ${MAX_FILES} imágenes. Borra alguna primero.`
+			});
+		}
 
 		const prepared = await prepareReference(file);
 		if (!prepared.ok) return fail(400, { message: prepared.message });

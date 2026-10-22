@@ -8,7 +8,9 @@ export function whatsappLink(number: string, message?: string): string {
 
 /** Replaces `{{variable}}`; unknown or empty variables become empty, never literal braces. */
 export function renderTemplate(body: string, variables: Record<string, string>): string {
-	return body.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, name: string) => variables[name] ?? '');
+	return body.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, name: string) =>
+		Object.hasOwn(variables, name) ? variables[name] : ''
+	);
 }
 
 export type SummaryItem = {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Minus from '@lucide/svelte/icons/minus';
+	import Pencil from '@lucide/svelte/icons/pencil';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import EmptyState from '#lib/components/store/EmptyState.svelte';
@@ -92,12 +93,13 @@
 							</p>
 							{#if row.line.personalizacion}
 								<p class="text-xs text-purple-light">
-									✏️ {row.line.personalizacion}
+									<Pencil size={14} stroke-width={1.75} class="mr-1 inline" aria-hidden="true" />
+									{row.line.personalizacion}
 									<span class="text-muted-foreground">(por cotizar)</span>
 								</p>
 							{/if}
 							{#if row.problem}
-								<p class="text-xs text-danger" role="alert">{row.problem}</p>
+								<p class="text-xs text-danger">{row.problem}</p>
 							{/if}
 							<div class="mt-auto flex items-center justify-between gap-3 pt-2">
 								<div

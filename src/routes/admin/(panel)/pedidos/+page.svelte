@@ -41,7 +41,7 @@
 
 	const isNew = (createdAt: string) => Date.now() - Date.parse(createdAt) < 24 * 60 * 60 * 1000;
 	const select =
-		'min-h-11 rounded-md border border-border bg-transparent px-3 text-sm text-foreground';
+		'min-h-11 w-full sm:w-auto rounded-md border border-border bg-transparent px-3 text-sm text-foreground';
 </script>
 
 <svelte:head>
@@ -151,8 +151,8 @@
 						{order.folio}
 						{#if order.estado === 'pendiente' && isNew(order.created_at)}
 							<span
-								class="ml-1 rounded bg-gold px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground"
-								>NUEVO</span
+								class="ml-1 rounded bg-gold px-1.5 py-0.5 text-xs font-semibold text-primary-foreground uppercase"
+								>Nuevo</span
 							>
 						{/if}
 					</span>

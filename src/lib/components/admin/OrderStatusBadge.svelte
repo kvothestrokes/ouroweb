@@ -6,7 +6,7 @@
 
 	const tone: Record<OrderStatus, string> = {
 		pendiente: 'bg-warning/15 text-warning',
-		esperando_anticipo: 'bg-warning/10 text-warning',
+		esperando_anticipo: 'border border-warning/50 text-warning',
 		confirmado: 'bg-accent/25 text-purple-light',
 		en_produccion: 'bg-accent/25 text-purple-light',
 		listo: 'bg-gold/15 text-gold',

@@ -291,7 +291,7 @@
 							bind:value={cantidad}
 							onchange={() =>
 								(cantidad = Math.max(1, Math.min(MAX_QUANTITY, Math.trunc(cantidad) || 1)))}
-							class="w-12 [appearance:textfield] bg-transparent text-center tabular-nums focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+							class="w-12 [appearance:textfield] bg-transparent text-center tabular-nums [&::-webkit-inner-spin-button]:appearance-none"
 						/>
 						<button
 							type="button"
@@ -339,7 +339,7 @@
 									maxlength="500"
 									rows="3"
 									placeholder="Ej. tu nombre en la espalda, otra frase, cambiar un color…"
-									class="rounded-md border border-border bg-background p-3 text-sm placeholder:text-muted-foreground focus:border-purple-light focus:outline-none"
+									class="rounded-md border border-border bg-background p-3 text-sm placeholder:text-muted-foreground focus:border-purple-light"
 								></textarea>
 								<span class="text-xs text-muted-foreground">
 									Si tienes una imagen de referencia, mándala por WhatsApp al confirmar tu pedido.

@@ -146,7 +146,7 @@
 					placeholder="Mín."
 					value={pesos(filters.min)}
 					onchange={auto ? autoSubmit : undefined}
-					class="h-11 w-full min-w-0 rounded-md border border-border bg-surface px-3 text-sm tabular-nums focus:border-purple-light focus:outline-none"
+					class="h-11 w-full min-w-0 rounded-md border border-border bg-surface px-3 text-sm tabular-nums focus:border-purple-light"
 				/>
 				<span class="text-muted-foreground" aria-hidden="true">–</span>
 				<label class="sr-only" for="max-{auto}">Precio máximo</label>
@@ -158,7 +158,7 @@
 					placeholder="Máx."
 					value={pesos(filters.max)}
 					onchange={auto ? autoSubmit : undefined}
-					class="h-11 w-full min-w-0 rounded-md border border-border bg-surface px-3 text-sm tabular-nums focus:border-purple-light focus:outline-none"
+					class="h-11 w-full min-w-0 rounded-md border border-border bg-surface px-3 text-sm tabular-nums focus:border-purple-light"
 				/>
 			</div>
 		</fieldset>
@@ -265,7 +265,7 @@
 						name="orden"
 						value={filters.orden}
 						onchange={(event) => event.currentTarget.form?.requestSubmit()}
-						class="h-11 max-w-44 min-w-0 rounded-full border border-border bg-surface px-4 text-sm text-foreground focus:border-purple-light focus:outline-none"
+						class="h-11 max-w-44 min-w-0 rounded-full border border-border bg-surface px-4 text-sm text-foreground focus:border-purple-light"
 					>
 						{#each SORT_OPTIONS as option (option.value)}
 							<option value={option.value}>{option.label}</option>

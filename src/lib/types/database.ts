@@ -832,6 +832,24 @@ export type Database = {
 					}
 				];
 			};
+			rate_limits: {
+				Row: {
+					hits: number;
+					key: string;
+					window_start: string;
+				};
+				Insert: {
+					hits?: number;
+					key: string;
+					window_start?: string;
+				};
+				Update: {
+					hits?: number;
+					key?: string;
+					window_start?: string;
+				};
+				Relationships: [];
+			};
 			reviews: {
 				Row: {
 					aprobada: boolean;
@@ -1009,6 +1027,10 @@ export type Database = {
 					p_whatsapp: string;
 				};
 				Returns: undefined;
+			};
+			hit_rate_limit: {
+				Args: { p_key: string; p_limit: number; p_window_seconds: number };
+				Returns: boolean;
 			};
 			is_admin: { Args: never; Returns: boolean };
 			next_folio: {
