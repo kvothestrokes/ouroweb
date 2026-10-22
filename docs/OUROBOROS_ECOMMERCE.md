@@ -3,7 +3,7 @@
 > Documento base del proyecto: visión, decisiones, flujos, modelo de datos y roadmap con checklist para trazar el progreso paso a paso.
 
 **Última actualización:** 22 de octubre de 2026
-**Estado general:** 🟡 Fase 0 en progreso (proyecto, tema, Supabase y variables listos; spikes de ImageKit validados; carpetas de ImageKit listas; faltan logo y deploy)
+**Estado general:** 🟡 Fase 1 en progreso (Fase 0 completa salvo el logo, que depende del negocio)
 
 ---
 
@@ -398,9 +398,9 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 - [x] **Spike:** overlay de diseño privado sobre prenda base con URL firmada + marca de agua
 - [x] **Spike:** URLs firmadas con expiración fija y verificación de caché
 - [ ] Logo original y versión simplificada
-- [ ] Deploy inicial en Vercel
+- [x] Deploy inicial en Vercel
 
-### Fase 1 — Base de datos ⬜
+### Fase 1 — Base de datos 🟡
 
 - [ ] Migraciones de todas las tablas
 - [ ] Políticas RLS
@@ -502,3 +502,4 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 | 2026-10-22 | Fase 0     | ✅ Proyecto Supabase enlazado y variables de entorno declaradas                                                              | 7 variables validadas con zod en `src/env.ts` (el build valida el `.env`). CLI `supabase` como devDependency, `supabase init` + `link` al proyecto `wgejdiewrysbuduahptu` (sin migraciones). Módulos de servidor de ImageKit (firma con expiración fija probada contra el SDK, mockup, subida) y página temporal `/spike/imagekit` solo en dev. El MCP de Supabase sigue fallando (HTTP 400). Siguiente: correr el spike y documentar resultados                                                                                                                                                                               |
 | 2026-10-22 | Fase 0     | ✅ Spikes de ImageKit: overlay privado en URL firmada y expiración fija con caché                                            | Diseño privado como capa: 200; diseño sin firma: 403; `ik-t` fijo por día; segunda carga `Hit from cloudfront`. El área de impresión va en px de la base real (la de prueba mide 1285×1224) y el diseño oscuro sobre prenda oscura requiere la versión clara. La ruta `/spike/imagekit` sigue disponible solo en dev                                                                                                                                                                                                                                                                                                           |
 | 2026-10-22 | Fase 0     | ✅ Estructura de carpetas en ImageKit                                                                                        | Verificada con el SDK: `/ouroboros/{bases,brand,designs,gallery,orders,products}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 2026-10-22 | Fase 0     | ✅ Deploy inicial en Vercel                                                                                                  | Confirmado funcionando por el usuario. La Fase 0 queda abierta solo por el logo (pendiente de negocio, sección 13), que no bloquea la Fase 1. Siguiente: Fase 1 — Base de datos                                                                                                                                                                                                                                                                                                                                                                                                                                                |
