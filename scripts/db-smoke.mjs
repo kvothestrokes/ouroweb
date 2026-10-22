@@ -682,6 +682,142 @@ for (const table of PRIVATE_TABLES) {
 	await cleanup();
 }
 
+// Admin order management (Fase 6): quote, status changes with history, payments.
+{
+	const fecha = '2099-05-10T12:00:00Z';
+	const cleanup = async () => {
+		await admin.from('orders').delete().like('folio', 'OUR-9905-%');
+		await admin.from('folio_counters').delete().eq('periodo', '9905');
+	};
+	await cleanup();
+	const { data: folio } = await admin.rpc('create_order', {
+		p_order: {
+			cliente_nombre: 'Smoke',
+			cliente_whatsapp: '520000000005',
+			metodo_entrega: 'paqueteria',
+			direccion: { calle: 'X' },
+			notas_cliente: '',
+			subtotal: 34000,
+			desc_mayoreo: 0
+		},
+		p_items: [
+			{
+				product_id: null,
+				nombre_snapshot: 'Playera',
+				color: 'Negro',
+				talla: 'M',
+				cantidad: 2,
+				precio_unitario: 17000,
+				recargo_talla: 0,
+				personalizacion_texto: 'Ana'
+			}
+		],
+		p_fecha: fecha
+	});
+	const { data: order } = await admin.from('orders').select('id').eq('folio', folio).single();
+	const id = order?.id;
+
+	const { error: anonQuote } = await anon.rpc('quote_order', {
+		p_order_id: id,
+		p_envio: 15000,
+		p_personalizacion: 5000,
+		p_precio_final: null,
+		p_anticipo: 27000
+	});
+	check('anon cannot quote orders', Boolean(anonQuote), anonQuote?.code);
+
+	const { error: quoteError } = await admin.rpc('quote_order', {
+		p_order_id: id,
+		p_envio: 15000,
+		p_personalizacion: 5000,
+		p_precio_final: null,
+		p_anticipo: 27000
+	});
+	const { data: quoted } = await admin
+		.from('orders')
+		.select('total, anticipo_requerido')
+		.eq('id', id)
+		.single();
+	check(
+		'quote_order recomputes the total',
+		!quoteError && quoted?.total === 54000 && quoted.anticipo_requerido === 27000,
+		quoteError?.message ?? JSON.stringify(quoted)
+	);
+
+	const { error: skip } = await admin.rpc('change_order_status', {
+		p_order_id: id,
+		p_estado: 'en_produccion',
+		p_nota: null
+	});
+	check('change_order_status rejects skipping states', Boolean(skip), skip?.message);
+	await admin.rpc('change_order_status', {
+		p_order_id: id,
+		p_estado: 'esperando_anticipo',
+		p_nota: null
+	});
+	const { error: noDeposit } = await admin.rpc('change_order_status', {
+		p_order_id: id,
+		p_estado: 'confirmado',
+		p_nota: null
+	});
+	check(
+		'confirming requires a deposit payment',
+		noDeposit?.message === 'deposit_required',
+		noDeposit?.message
+	);
+
+	const { error: tooMuch } = await admin.rpc('add_payment', {
+		p_order_id: id,
+		p_tipo: 'anticipo',
+		p_monto: 60000,
+		p_metodo: 'Transferencia',
+		p_fecha: null
+	});
+	check(
+		'add_payment rejects more than the balance',
+		tooMuch?.message === 'payment_exceeds_balance',
+		tooMuch?.message
+	);
+	const { error: payError } = await admin.rpc('add_payment', {
+		p_order_id: id,
+		p_tipo: 'anticipo',
+		p_monto: 27000,
+		p_metodo: 'Transferencia',
+		p_fecha: null
+	});
+	check('add_payment registers the deposit', !payError, payError?.message);
+	const { error: confirmError } = await admin.rpc('change_order_status', {
+		p_order_id: id,
+		p_estado: 'confirmado',
+		p_nota: 'Anticipo recibido'
+	});
+	check('a paid deposit confirms the order', !confirmError, confirmError?.message);
+	await admin.rpc('change_order_status', {
+		p_order_id: id,
+		p_estado: 'en_produccion',
+		p_nota: null
+	});
+	await admin.rpc('change_order_status', { p_order_id: id, p_estado: 'listo', p_nota: null });
+	const { error: wrongBranch } = await admin.rpc('change_order_status', {
+		p_order_id: id,
+		p_estado: 'listo_para_recoger',
+		p_nota: null
+	});
+	check('parcel orders cannot go to pickup', Boolean(wrongBranch), wrongBranch?.message);
+	const { data: events } = await admin
+		.from('order_events')
+		.select('estado')
+		.eq('order_id', id)
+		.order('fecha');
+	check(
+		'every status change is in the history',
+		events?.map((event) => event.estado).join(',') ===
+			'pendiente,esperando_anticipo,confirmado,en_produccion,listo',
+		events?.map((event) => event.estado).join(',')
+	);
+	await cleanup();
+}
+
 // Private columns of public tables: original photo paths and design ids.
 {
 	const { error: designError } = await anon.from('products').select('design_id').limit(1);

@@ -975,7 +975,26 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
+			add_payment: {
+				Args: {
+					p_fecha?: string;
+					p_metodo: string;
+					p_monto: number;
+					p_order_id: string;
+					p_tipo: Database['public']['Enums']['payment_type'];
+				};
+				Returns: string;
+			};
+			assert_order_admin: { Args: never; Returns: undefined };
 			category_is_public: { Args: { p_category_id: string }; Returns: boolean };
+			change_order_status: {
+				Args: {
+					p_estado: Database['public']['Enums']['order_status'];
+					p_nota?: string;
+					p_order_id: string;
+				};
+				Returns: undefined;
+			};
 			create_custom_order: {
 				Args: { p_fecha?: string; p_order: Json; p_request: Json };
 				Returns: string;
@@ -984,11 +1003,27 @@ export type Database = {
 				Args: { p_fecha?: string; p_items: Json; p_order: Json };
 				Returns: string;
 			};
-			guard_new_order: { Args: { p_whatsapp: string }; Returns: undefined };
+			guard_new_order: {
+				Args: {
+					p_tipo?: Database['public']['Enums']['order_type'];
+					p_whatsapp: string;
+				};
+				Returns: undefined;
+			};
 			is_admin: { Args: never; Returns: boolean };
 			next_folio: {
 				Args: { p_fecha?: string; p_prefijo?: string };
 				Returns: string;
+			};
+			quote_order: {
+				Args: {
+					p_anticipo: number;
+					p_envio: number;
+					p_order_id: string;
+					p_personalizacion: number;
+					p_precio_final: number;
+				};
+				Returns: undefined;
 			};
 			save_product: {
 				Args: {

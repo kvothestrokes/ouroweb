@@ -3,6 +3,7 @@ import {
 	type LucideIcon,
 	FolderTree,
 	House,
+	MessageSquareText,
 	Layers,
 	Palette,
 	Ruler,
@@ -63,7 +64,13 @@ export const NAV: NavItem[] = [
 		icon: Sparkles,
 		route: '/admin/(panel)/tipos-de-encargo'
 	},
-	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers }
+	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers, route: '/admin/(panel)/pedidos' },
+	{
+		path: '/admin/plantillas',
+		label: 'WhatsApp y negocio',
+		icon: MessageSquareText,
+		route: '/admin/(panel)/plantillas'
+	}
 ];
 
 export function isActive(path: string, pathname: string): boolean {
