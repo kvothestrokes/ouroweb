@@ -30,19 +30,57 @@ export type TrackingView = {
 };
 
 function sameDigits(phone: string, digits: string): boolean {
-	return timingSafeEqual(
-		Buffer.from(phone.slice(-4)),
-		Buffer.from(digits.padStart(4, '0').slice(0, 4))
-	);
+	const last = phone.slice(-4).padStart(4, '0');
+	return timingSafeEqual(Buffer.from(last), Buffer.from(digits.padStart(4, '0').slice(0, 4)));
 }
 
-/** Both limits fail closed: guessing 4 digits must stay expensive. */
+/** IPv6 visitors usually own a whole /64, so they count as one. */
+export function clientKey(ip: string): string {
+	return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip;
+}
+
+// Failed guesses per folio: 8 per hour and 20 per day. Only failures count, so nobody can
+// lock the real customer out by searching their folio over and over.
+const FOLIO_LIMITS = [
+	{ suffix: 'h', limit: 8, windowSeconds: 3600 },
+	{ suffix: 'd', limit: 20, windowSeconds: 86400 }
+] as const;
+
+/** Before looking an order up. Both checks fail closed: guessing must stay expensive. */
 export async function allowTracking(ip: string, folio: string): Promise<boolean> {
-	const [byIp, byFolio] = await Promise.all([
-		allowDurable(`seguimiento:ip:${ip}`, { limit: 15, windowSeconds: 900, failOpen: false }),
-		allowDurable(`seguimiento:folio:${folio}`, { limit: 8, windowSeconds: 3600, failOpen: false })
-	]);
-	return byIp && byFolio;
+	if (
+		!(await allowDurable(`seguimiento:ip:${clientKey(ip)}`, {
+			limit: 15,
+			windowSeconds: 900,
+			failOpen: false
+		}))
+	) {
+		return false;
+	}
+	const blocked = await Promise.all(
+		FOLIO_LIMITS.map(async ({ suffix, limit, windowSeconds }) => {
+			const { data, error } = await supabaseAdmin.rpc('rate_limit_exceeded', {
+				p_key: `seguimiento:fallos:${suffix}:${folio}`,
+				p_limit: limit,
+				p_window_seconds: windowSeconds
+			});
+			return error ? true : data === true;
+		})
+	);
+	return !blocked.some(Boolean);
+}
+
+/** After a wrong folio/digits pair. */
+export async function recordTrackingFailure(folio: string): Promise<void> {
+	await Promise.all(
+		FOLIO_LIMITS.map(({ suffix, limit, windowSeconds }) =>
+			allowDurable(`seguimiento:fallos:${suffix}:${folio}`, {
+				limit,
+				windowSeconds,
+				failOpen: false
+			})
+		)
+	);
 }
 
 async function loadOrder(folio: string) {

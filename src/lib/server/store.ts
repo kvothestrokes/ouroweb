@@ -114,7 +114,7 @@ export type StoreReview = {
 export async function loadReviews(productId?: string): Promise<StoreReview[]> {
 	let query = db
 		.from('reviews')
-		.select('id, calificacion, texto, foto_path, product_id, created_at')
+		.select('id, calificacion, texto, tiene_foto, product_id, created_at, updated_at')
 		.order('created_at', { ascending: false })
 		.limit(30);
 	if (productId) query = query.eq('product_id', productId);
@@ -124,7 +124,7 @@ export async function loadReviews(productId?: string): Promise<StoreReview[]> {
 		texto: review.texto,
 		productId: review.product_id,
 		creado: review.created_at,
-		foto: review.foto_path ? `/img/r/${review.id}?v=${Date.parse(review.created_at)}` : null
+		foto: review.tiene_foto ? `/img/r/${review.id}?v=${Date.parse(review.updated_at)}` : null
 	}));
 }
 
@@ -134,7 +134,7 @@ export async function loadGallery(): Promise<GalleryItem[]> {
 	const rows = unwrap(
 		await db
 			.from('gallery_items')
-			.select('id, titulo, created_at, collections(slug)')
+			.select('id, titulo, updated_at, collections(slug)')
 			.order('orden')
 			.order('created_at', { ascending: false })
 	);
@@ -142,7 +142,7 @@ export async function loadGallery(): Promise<GalleryItem[]> {
 		id: item.id,
 		titulo: item.titulo,
 		coleccion: item.collections?.slug ?? null,
-		src: `/img/g/${item.id}?v=${Date.parse(item.created_at)}`
+		src: `/img/g/${item.id}?v=${Date.parse(item.updated_at)}`
 	}));
 }
 

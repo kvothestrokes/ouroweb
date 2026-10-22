@@ -259,6 +259,7 @@ export type Database = {
 					imagekit_path: string;
 					orden: number;
 					titulo: string;
+					updated_at: string;
 				};
 				Insert: {
 					collection_id?: string | null;
@@ -267,6 +268,7 @@ export type Database = {
 					imagekit_path: string;
 					orden?: number;
 					titulo?: string;
+					updated_at?: string;
 				};
 				Update: {
 					collection_id?: string | null;
@@ -275,6 +277,7 @@ export type Database = {
 					imagekit_path?: string;
 					orden?: number;
 					titulo?: string;
+					updated_at?: string;
 				};
 				Relationships: [
 					{
@@ -860,6 +863,8 @@ export type Database = {
 					order_id: string;
 					product_id: string | null;
 					texto: string;
+					tiene_foto: boolean | null;
+					updated_at: string;
 				};
 				Insert: {
 					aprobada?: boolean;
@@ -870,6 +875,8 @@ export type Database = {
 					order_id: string;
 					product_id?: string | null;
 					texto?: string;
+					tiene_foto?: boolean | null;
+					updated_at?: string;
 				};
 				Update: {
 					aprobada?: boolean;
@@ -880,6 +887,8 @@ export type Database = {
 					order_id?: string;
 					product_id?: string | null;
 					texto?: string;
+					tiene_foto?: boolean | null;
+					updated_at?: string;
 				};
 				Relationships: [
 					{
@@ -1046,6 +1055,10 @@ export type Database = {
 					p_precio_final: number;
 				};
 				Returns: undefined;
+			};
+			rate_limit_exceeded: {
+				Args: { p_key: string; p_limit: number; p_window_seconds: number };
+				Returns: boolean;
 			};
 			save_product: {
 				Args: {

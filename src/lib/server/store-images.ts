@@ -80,27 +80,37 @@ async function watermarked(path: string, width: number): Promise<Buffer> {
 	});
 }
 
-/** Photo of an approved review (read through RLS: only approved ones are public). */
+/** Photo of an approved review. The path holds the folio, so only the server reads it. */
 export async function reviewPhoto(id: string, url: URL): Promise<Buffer> {
-	const { data } = await publicDb()
+	const { data } = await supabaseAdmin
 		.from('reviews')
-		.select('foto_path, created_at')
+		.select('foto_path, updated_at')
 		.eq('id', id)
+		.eq('aprobada', true)
 		.maybeSingle();
 	if (!data?.foto_path) error(404, 'No encontrado');
-	return watermarked(data.foto_path, canonicalImageQuery(url, Date.parse(data.created_at)));
+	return watermarked(data.foto_path, canonicalImageQuery(url, Date.parse(data.updated_at)));
 }
 
 /** Gallery photo (spec F12). */
 export async function galleryPhoto(id: string, url: URL): Promise<Buffer> {
 	const { data } = await publicDb()
 		.from('gallery_items')
-		.select('imagekit_path, created_at')
+		.select('imagekit_path, updated_at')
 		.eq('id', id)
 		.maybeSingle();
 	if (!data) error(404, 'No encontrado');
-	return watermarked(data.imagekit_path, canonicalImageQuery(url, Date.parse(data.created_at)));
+	return watermarked(data.imagekit_path, canonicalImageQuery(url, Date.parse(data.updated_at)));
 }
+
+/**
+ * Reviews and gallery photos can be hidden or deleted at any time, so the CDN keeps them
+ * for an hour only.
+ */
+export const SHORT_IMAGE_HEADERS = {
+	'content-type': 'image/webp',
+	'cache-control': 'public, max-age=3600, s-maxage=3600'
+};
 
 /**
  * CDN cache of a week: URLs carry the product version, so a saved product gets new URLs,

@@ -5,6 +5,7 @@ import {
 	TOO_MANY,
 	allowTracking,
 	findTrackedOrder,
+	recordTrackingFailure,
 	submitReview,
 	trackingView
 } from '#lib/server/tracking.js';
@@ -25,7 +26,10 @@ export const actions = {
 			return fail(429, { message: TOO_MANY, folio });
 
 		const order = await findTrackedOrder(folio, digitos);
-		if (!order) return fail(404, { message: NOT_FOUND, folio });
+		if (!order) {
+			await recordTrackingFailure(folio);
+			return fail(404, { message: NOT_FOUND, folio });
+		}
 		return { view: trackingView(order), digitos };
 	},
 
@@ -39,7 +43,10 @@ export const actions = {
 			return fail(429, { message: TOO_MANY, folio });
 
 		const order = await findTrackedOrder(folio, digitos);
-		if (!order) return fail(404, { message: NOT_FOUND, folio });
+		if (!order) {
+			await recordTrackingFailure(folio);
+			return fail(404, { message: NOT_FOUND, folio });
+		}
 		if (!review.ok) {
 			return fail(400, { reviewMessage: review.message, view: trackingView(order), digitos });
 		}

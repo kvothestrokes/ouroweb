@@ -875,6 +875,39 @@ for (const table of PRIVATE_TABLES) {
 	await admin.from('rate_limits').delete().eq('key', key);
 }
 
+// Review photo paths contain the folio: anon reads only whether there is a photo.
+{
+	const { error: pathError } = await anon.from('reviews').select('foto_path').limit(1);
+	check('anon cannot read reviews.foto_path', Boolean(pathError), pathError?.code);
+	const { error: flagError } = await anon
+		.from('reviews')
+		.select('id, tiene_foto, updated_at')
+		.limit(1);
+	check('anon reads reviews.tiene_foto', !flagError, flagError?.message);
+}
+
+// rate_limit_exceeded only looks: it never counts a request.
+{
+	const key = `smoke-peek:${Date.now()}`;
+	await admin.rpc('hit_rate_limit', { p_key: key, p_limit: 1, p_window_seconds: 60 });
+	const { data: first } = await admin.rpc('rate_limit_exceeded', {
+		p_key: key,
+		p_limit: 1,
+		p_window_seconds: 60
+	});
+	const { data: second } = await admin.rpc('rate_limit_exceeded', {
+		p_key: key,
+		p_limit: 2,
+		p_window_seconds: 60
+	});
+	check(
+		'rate_limit_exceeded reports without counting',
+		first === true && second === false,
+		`${first} ${second}`
+	);
+	await admin.from('rate_limits').delete().eq('key', key);
+}
+
 // One review per order.
 {
 	const fecha = '2099-06-10T12:00:00Z';
