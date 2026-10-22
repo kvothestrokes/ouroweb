@@ -2,8 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
 	checkCategoryPlacement,
 	type CategoryInput,
-	type CategoryRow,
-	type CategoryTree
+	type CategoryRow
 } from '#lib/domain/catalog.js';
 import type { Database } from '#lib/types/database.js';
 
@@ -20,7 +19,7 @@ export async function listCategories(db: Db): Promise<CategoryRow[] | null> {
 	return error ? null : data;
 }
 
-export function toTree(rows: CategoryRow[]): CategoryTree {
+export function toTree<T extends CategoryRow>(rows: T[]): (T & { children: T[] })[] {
 	return rows
 		.filter((row) => !row.parent_id)
 		.map((root) => ({ ...root, children: rows.filter((row) => row.parent_id === root.id) }));
