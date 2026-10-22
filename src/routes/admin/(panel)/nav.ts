@@ -3,6 +3,8 @@ import {
 	type LucideIcon,
 	FolderTree,
 	House,
+	Images,
+	MessageSquareHeart,
 	MessageSquareText,
 	Layers,
 	Palette,
@@ -65,6 +67,13 @@ export const NAV: NavItem[] = [
 		route: '/admin/(panel)/tipos-de-encargo'
 	},
 	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers, route: '/admin/(panel)/pedidos' },
+	{
+		path: '/admin/resenas',
+		label: 'Reseñas',
+		icon: MessageSquareHeart,
+		route: '/admin/(panel)/resenas'
+	},
+	{ path: '/admin/galeria', label: 'Galería', icon: Images, route: '/admin/(panel)/galeria' },
 	{
 		path: '/admin/plantillas',
 		label: 'WhatsApp y negocio',

@@ -10,7 +10,7 @@ Tienda en línea de **Ouroboros**: playeras y sudaderas con diseños de anime / 
 
 ## Estado actual
 
-- Fase actual: **Fase 7 — Seguimiento, reseñas y galería**. Fase 6 completa.
+- Fase actual: **Fase 8 — Precios avanzados y dashboard**. Fase 7 completa.
 - El progreso vive en la sección 12 (checklist) y 14 (registro) del spec.
 
 ## Stack

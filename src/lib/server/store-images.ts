@@ -3,7 +3,7 @@ import { renderDesignMockup } from './designs.js';
 import { parseFotoKey, loadWatermarkSource } from './garment-assets.js';
 import { downloadImage } from './imagekit.js';
 import { watermarkPhoto } from './mockup.js';
-import { isPublicProduct } from './store.js';
+import { isPublicProduct, publicDb } from './store.js';
 import { supabaseAdmin } from './supabase-admin.js';
 
 /** Widths the store asks for (srcset); anything else is rejected so the CDN cache stays small. */
@@ -70,6 +70,36 @@ export async function productPhoto(imageId: string, url: URL): Promise<Buffer> {
 		watermark: await loadWatermarkSource(),
 		maxSize: width
 	});
+}
+
+async function watermarked(path: string, width: number): Promise<Buffer> {
+	return watermarkPhoto({
+		photo: await downloadImage(path),
+		watermark: await loadWatermarkSource(),
+		maxSize: width
+	});
+}
+
+/** Photo of an approved review (read through RLS: only approved ones are public). */
+export async function reviewPhoto(id: string, url: URL): Promise<Buffer> {
+	const { data } = await publicDb()
+		.from('reviews')
+		.select('foto_path, created_at')
+		.eq('id', id)
+		.maybeSingle();
+	if (!data?.foto_path) error(404, 'No encontrado');
+	return watermarked(data.foto_path, canonicalImageQuery(url, Date.parse(data.created_at)));
+}
+
+/** Gallery photo (spec F12). */
+export async function galleryPhoto(id: string, url: URL): Promise<Buffer> {
+	const { data } = await publicDb()
+		.from('gallery_items')
+		.select('imagekit_path, created_at')
+		.eq('id', id)
+		.maybeSingle();
+	if (!data) error(404, 'No encontrado');
+	return watermarked(data.imagekit_path, canonicalImageQuery(url, Date.parse(data.created_at)));
 }
 
 /**

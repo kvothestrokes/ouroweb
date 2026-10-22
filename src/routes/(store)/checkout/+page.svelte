@@ -171,7 +171,13 @@
 				</li>
 			</ul>
 			<p class="text-xs text-muted-foreground">
-				Guarda tu folio: con él y los últimos 4 dígitos de tu WhatsApp podrás seguir tu pedido.
+				Guarda tu folio: con él y los últimos 4 dígitos de tu WhatsApp podrás
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve()d path plus the folio query -->
+				<a
+					href={`${resolve('/(store)/seguimiento')}?folio=${placed.folio}`}
+					class="text-purple-light underline">seguir tu pedido</a
+				>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->.
 			</p>
 			<a
 				href={resolve('/(store)')}

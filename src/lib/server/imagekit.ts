@@ -4,7 +4,7 @@ import { IMAGEKIT_PRIVATE_KEY } from '$app/env/private';
 import { PUBLIC_IMAGEKIT_URL_ENDPOINT } from '$app/env/public';
 import { fixedExpiry, signUrl } from './imagekit-signing.js';
 
-/** Root folders in ImageKit (spec §5.1). `designs` and `orders` are private. */
+/** Root folders in ImageKit (spec §5.1). Everything but `bases` and `brand` is private. */
 export const FOLDERS = {
 	bases: '/ouroboros/bases',
 	designs: '/ouroboros/designs',
@@ -16,8 +16,9 @@ export const FOLDERS = {
 
 export type Folder = keyof typeof FOLDERS;
 
-// Product photos are private too: the store only serves them watermarked through /img/f.
-const PRIVATE_FOLDERS: ReadonlySet<Folder> = new Set(['designs', 'orders', 'products']);
+// Product, review and gallery photos are private too: the store only serves them
+// watermarked through /img/*.
+const PRIVATE_FOLDERS: ReadonlySet<Folder> = new Set(['designs', 'orders', 'products', 'gallery']);
 
 const client = new ImageKit({ privateKey: IMAGEKIT_PRIVATE_KEY });
 

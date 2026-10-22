@@ -23,6 +23,9 @@ const db = createClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHAB
 	auth: { persistSession: false, autoRefreshToken: false }
 });
 
+/** The anonymous client, for server code that must read exactly what the public may. */
+export const publicDb = () => db;
+
 // Never select design ids or ImageKit paths here: this data goes to the browser.
 const STORE_PRODUCT_SELECT = `
 	id, slug, nombre, descripcion, category_id, tipo_imagen, precio_base, modo_stock,
@@ -95,6 +98,52 @@ export async function loadCustomRequestTypes(): Promise<StoreRequestType[]> {
 	return unwrap(
 		await db.from('custom_request_types').select('id, nombre, precio_desde').order('nombre')
 	);
+}
+
+export type StoreReview = {
+	id: string;
+	calificacion: number;
+	texto: string;
+	productId: string | null;
+	creado: string;
+	/** Photo URL through /img/r, when the review has one. */
+	foto: string | null;
+};
+
+/** Approved reviews, newest first (RLS only returns approved ones). */
+export async function loadReviews(productId?: string): Promise<StoreReview[]> {
+	let query = db
+		.from('reviews')
+		.select('id, calificacion, texto, foto_path, product_id, created_at')
+		.order('created_at', { ascending: false })
+		.limit(30);
+	if (productId) query = query.eq('product_id', productId);
+	return unwrap(await query).map((review) => ({
+		id: review.id,
+		calificacion: review.calificacion,
+		texto: review.texto,
+		productId: review.product_id,
+		creado: review.created_at,
+		foto: review.foto_path ? `/img/r/${review.id}?v=${Date.parse(review.created_at)}` : null
+	}));
+}
+
+export type GalleryItem = { id: string; titulo: string; coleccion: string | null; src: string };
+
+export async function loadGallery(): Promise<GalleryItem[]> {
+	const rows = unwrap(
+		await db
+			.from('gallery_items')
+			.select('id, titulo, created_at, collections(slug)')
+			.order('orden')
+			.order('created_at', { ascending: false })
+	);
+	return rows.map((item) => ({
+		id: item.id,
+		titulo: item.titulo,
+		coleccion: item.collections?.slug ?? null,
+		src: `/img/g/${item.id}?v=${Date.parse(item.created_at)}`
+	}));
 }
 
 /**

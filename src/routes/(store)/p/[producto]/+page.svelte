@@ -10,6 +10,7 @@
 	import FavoriteButton from '#lib/components/store/FavoriteButton.svelte';
 	import ProductGrid from '#lib/components/store/ProductGrid.svelte';
 	import ProtectedImage from '#lib/components/store/ProtectedImage.svelte';
+	import ReviewList from '#lib/components/store/ReviewList.svelte';
 	import SizeGuide from '#lib/components/store/SizeGuide.svelte';
 	import StockBadge from '#lib/components/store/StockBadge.svelte';
 	import { formatMoney } from '#lib/domain/money.js';
@@ -374,6 +375,13 @@
 			</div>
 		</div>
 	</div>
+
+	{#if data.reviews.length}
+		<section class="mt-20" aria-labelledby="resenas">
+			<h2 id="resenas" class="mb-6 text-2xl">Lo que dicen nuestros clientes</h2>
+			<ReviewList reviews={data.reviews} />
+		</section>
+	{/if}
 
 	{#if data.related.length}
 		<section class="mt-20">

@@ -88,12 +88,14 @@
 				<MessageCircle size={20} stroke-width={1.75} />
 				Enviar encargo por WhatsApp
 			</ExternalLink>
+			<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve()d path plus the folio query -->
 			<a
-				href={resolve('/(store)')}
+				href={`${resolve('/(store)/seguimiento')}?folio=${form.placed.folio}`}
 				class="inline-flex min-h-11 items-center text-sm text-purple-light hover:underline"
 			>
-				Volver a la tienda
+				Seguir mi encargo
 			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		</section>
 	{:else}
 		<header class="mb-8 flex flex-col gap-3">

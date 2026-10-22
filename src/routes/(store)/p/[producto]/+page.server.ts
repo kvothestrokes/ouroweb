@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { isSlug } from '#lib/domain/slug.js';
 import { findCategory } from '#lib/domain/store-product.js';
-import { loadProductDetail, loadStoreProducts, storeData } from '#lib/server/store.js';
+import { loadProductDetail, loadReviews, loadStoreProducts, storeData } from '#lib/server/store.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
@@ -25,7 +25,10 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		(item) => item.categoryId === product.categoryId && !sameCollection.includes(item)
 	);
 
+	const reviews = await storeData(() => loadReviews(product.id));
+
 	return {
+		reviews,
 		product,
 		category,
 		root: found && found.root.id !== category.id ? found.root : null,

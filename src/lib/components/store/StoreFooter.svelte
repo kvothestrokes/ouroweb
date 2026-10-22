@@ -34,6 +34,14 @@
 				{/each}
 				<li>
 					<a
+						href={resolve('/(store)/galeria')}
+						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
+					>
+						Galería
+					</a>
+				</li>
+				<li>
+					<a
 						href={resolve('/(store)/colecciones')}
 						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
 					>
@@ -54,6 +62,14 @@
 					>
 						WhatsApp
 					</ExternalLink>
+				</li>
+				<li>
+					<a
+						href={resolve('/(store)/seguimiento')}
+						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
+					>
+						Sigue tu pedido
+					</a>
 				</li>
 				<li>
 					<a
