@@ -1,0 +1,174 @@
+/*
+ * Ouroboros — theme tokens (premium dark: black + gold, purple accent).
+ * Merged from setup/app.css with the shadcn-svelte init output.
+ * The site is dark only: values live directly in :root and <html> carries the
+ * `dark` class so shadcn `dark:` variants always apply.
+ */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource/cinzel/500.css';
+@import '@fontsource/cinzel/600.css';
+@import '@fontsource/cinzel/700.css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	color-scheme: dark;
+
+	/* ── Brand ─────────────────────────────────── */
+	--gold: #d4af37;
+	--gold-light: #f2d27a;
+	--purple: #6d28d9;
+	--purple-light: #a78bfa;
+
+	/* ── Surfaces and text ─────────────────────── */
+	--bg: #0a0a0b;
+	--surface: #141416;
+	--surface-raised: #1c1c20;
+	--line: #2a2a30;
+	--text: #f5f3ee;
+	--text-muted: #a1a1aa;
+
+	/* ── States ────────────────────────────────── */
+	--success: #22c55e;
+	--warning: #f59e0b;
+	--danger: #ef4444;
+
+	/* ── shadcn-svelte variables ───────────────── */
+	--radius: 0.75rem;
+	--background: var(--bg);
+	--foreground: var(--text);
+	--card: var(--surface);
+	--card-foreground: var(--text);
+	--popover: var(--surface-raised);
+	--popover-foreground: var(--text);
+	--primary: var(--gold);
+	--primary-foreground: #0a0a0b;
+	--secondary: var(--surface-raised);
+	--secondary-foreground: var(--text);
+	--muted: var(--surface-raised);
+	--muted-foreground: var(--text-muted);
+	--accent: var(--purple);
+	--accent-foreground: #ffffff;
+	--destructive: var(--danger);
+	--border: var(--line);
+	--input: var(--line);
+	--ring: var(--purple-light);
+
+	--chart-1: var(--gold);
+	--chart-2: var(--purple-light);
+	--chart-3: var(--gold-light);
+	--chart-4: var(--purple);
+	--chart-5: var(--text-muted);
+
+	--sidebar: var(--surface);
+	--sidebar-foreground: var(--text);
+	--sidebar-primary: var(--gold);
+	--sidebar-primary-foreground: #0a0a0b;
+	--sidebar-accent: var(--surface-raised);
+	--sidebar-accent-foreground: var(--text);
+	--sidebar-border: var(--line);
+	--sidebar-ring: var(--purple-light);
+}
+
+@theme inline {
+	--font-display: 'Cinzel', 'Marcellus', Georgia, serif;
+	--font-sans:
+		'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+	--color-gold: var(--gold);
+	--color-gold-light: var(--gold-light);
+	--color-purple: var(--purple);
+	--color-purple-light: var(--purple-light);
+	--color-surface: var(--surface);
+	--color-surface-raised: var(--surface-raised);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-danger: var(--danger);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--radius-2xl: calc(var(--radius) + 8px);
+	--radius-3xl: calc(var(--radius) + 12px);
+	--radius-4xl: calc(var(--radius) + 16px);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	html {
+		background: var(--background);
+		color: var(--foreground);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+		letter-spacing: 0.02em;
+	}
+	:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+}
+
+/* Product image backdrop: keeps black garments from disappearing */
+@utility product-stage {
+	background: radial-gradient(
+		ellipse at 50% 40%,
+		#26262c 0%,
+		var(--surface-raised) 55%,
+		var(--surface) 100%
+	);
+}
+
+/* Makes saving images harder (a deterrent, not real protection) */
+@utility image-guard {
+	-webkit-user-drag: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}

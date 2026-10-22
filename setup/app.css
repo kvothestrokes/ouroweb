@@ -1,0 +1,133 @@
+/*
+ * Ouroboros — tokens del tema (oscuro premium: negro + dorado, morado de acento)
+ *
+ * Uso (Fase 0): después de `npx sv create` y `npx shadcn-svelte@latest init`,
+ * fusiona este archivo con src/app.css. Conserva los imports que generen esas
+ * herramientas y reemplaza sus variables de color por las de aquí.
+ * El sitio es solo oscuro: los valores van directo en :root.
+ */
+@import 'tailwindcss';
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+	color-scheme: dark;
+
+	/* ── Marca ─────────────────────────────────── */
+	--gold: #d4af37;
+	--gold-light: #f2d27a;
+	--purple: #6d28d9;
+	--purple-light: #a78bfa;
+
+	/* ── Superficies y texto ───────────────────── */
+	--bg: #0a0a0b;
+	--surface: #141416;
+	--surface-raised: #1c1c20;
+	--line: #2a2a30;
+	--text: #f5f3ee;
+	--text-muted: #a1a1aa;
+
+	/* ── Estados ───────────────────────────────── */
+	--success: #22c55e;
+	--warning: #f59e0b;
+	--danger: #ef4444;
+
+	/* ── Variables de shadcn-svelte ────────────── */
+	--radius: 0.75rem;
+	--background: var(--bg);
+	--foreground: var(--text);
+	--card: var(--surface);
+	--card-foreground: var(--text);
+	--popover: var(--surface-raised);
+	--popover-foreground: var(--text);
+	--primary: var(--gold);
+	--primary-foreground: #0a0a0b;
+	--secondary: var(--surface-raised);
+	--secondary-foreground: var(--text);
+	--muted: var(--surface-raised);
+	--muted-foreground: var(--text-muted);
+	--accent: var(--purple);
+	--accent-foreground: #ffffff;
+	--destructive: var(--danger);
+	--border: var(--line);
+	--input: var(--line);
+	--ring: var(--purple-light);
+}
+
+@theme inline {
+	--font-display: 'Cinzel', 'Marcellus', Georgia, serif;
+	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+	--color-gold: var(--gold);
+	--color-gold-light: var(--gold-light);
+	--color-purple: var(--purple);
+	--color-purple-light: var(--purple-light);
+	--color-surface: var(--surface);
+	--color-surface-raised: var(--surface-raised);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-danger: var(--danger);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+	* {
+		border-color: var(--border);
+	}
+	html {
+		background: var(--background);
+		color: var(--foreground);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+	}
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+		letter-spacing: 0.02em;
+	}
+	:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+}
+
+/* Fondo de las imágenes de producto: evita que las prendas negras se pierdan */
+@utility product-stage {
+	background: radial-gradient(
+		ellipse at 50% 40%,
+		#26262c 0%,
+		var(--surface-raised) 55%,
+		var(--surface) 100%
+	);
+}
+
+/* Capa que dificulta guardar imágenes (complemento, no protección real) */
+@utility image-guard {
+	-webkit-user-drag: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
