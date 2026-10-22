@@ -975,6 +975,11 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
+			category_is_public: { Args: { p_category_id: string }; Returns: boolean };
+			create_order: {
+				Args: { p_fecha?: string; p_items: Json; p_order: Json };
+				Returns: string;
+			};
 			is_admin: { Args: never; Returns: boolean };
 			next_folio: {
 				Args: { p_fecha?: string; p_prefijo?: string };

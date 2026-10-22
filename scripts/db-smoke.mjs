@@ -451,6 +451,99 @@ for (const table of PRIVATE_TABLES) {
 }
 
 // Seed is present.
+// create_order: one transaction for folio + order + items + first event (Fase 4).
+{
+	const fecha = '2099-03-10T12:00:00Z';
+	const cleanup = async () => {
+		await admin.from('orders').delete().like('folio', 'OUR-9903-%');
+		await admin.from('folio_counters').delete().eq('periodo', '9903');
+	};
+	await cleanup();
+	const order = {
+		cliente_nombre: 'Smoke',
+		cliente_whatsapp: '520000000000',
+		metodo_entrega: 'recoger',
+		direccion: null,
+		notas_cliente: '',
+		subtotal: 37000,
+		desc_mayoreo: 0
+	};
+	const items = [
+		{
+			product_id: null,
+			nombre_snapshot: 'Playera',
+			color: 'Negro',
+			talla: 'M',
+			cantidad: 1,
+			precio_unitario: 17000,
+			recargo_talla: 0,
+			personalizacion_texto: null
+		},
+		{
+			product_id: null,
+			nombre_snapshot: 'Playera',
+			color: 'Negro',
+			talla: 'XXG',
+			cantidad: 1,
+			precio_unitario: 17000,
+			recargo_talla: 3000,
+			personalizacion_texto: 'Ana'
+		}
+	];
+	const { error: anonError } = await anon.rpc('create_order', {
+		p_order: order,
+		p_items: items,
+		p_fecha: fecha
+	});
+	check('anon cannot call create_order', Boolean(anonError), anonError?.code);
+
+	const { data: folio, error } = await admin.rpc('create_order', {
+		p_order: order,
+		p_items: items,
+		p_fecha: fecha
+	});
+	check('create_order returns the folio', folio === 'OUR-9903-0001', error?.message ?? folio);
+	const { data: saved } = await admin
+		.from('orders')
+		.select('estado, total, envio, order_items(id), order_events(estado)')
+		.eq('folio', 'OUR-9903-0001')
+		.maybeSingle();
+	check(
+		'create_order saves totals, items and the first event',
+		saved?.estado === 'pendiente' &&
+			saved.total === 37000 &&
+			saved.envio === 0 &&
+			saved.order_items.length === 2 &&
+			saved.order_events[0]?.estado === 'pendiente',
+		JSON.stringify(saved)
+	);
+
+	const { error: badTotal } = await admin.rpc('create_order', {
+		p_order: { ...order, subtotal: 1 },
+		p_items: items,
+		p_fecha: fecha
+	});
+	check(
+		'create_order rejects a subtotal that does not match its items',
+		Boolean(badTotal),
+		badTotal?.message
+	);
+
+	for (let i = 0; i < 4; i++)
+		await admin.rpc('create_order', { p_order: order, p_items: items, p_fecha: fecha });
+	const { error: spam } = await admin.rpc('create_order', {
+		p_order: order,
+		p_items: items,
+		p_fecha: fecha
+	});
+	check(
+		'create_order limits pending orders per WhatsApp per hour',
+		spam?.message === 'too_many_orders',
+		spam?.message
+	);
+	await cleanup();
+}
+
 // Private columns of public tables: original photo paths and design ids.
 {
 	const { error: designError } = await anon.from('products').select('design_id').limit(1);

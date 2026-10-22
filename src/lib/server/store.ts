@@ -65,6 +65,13 @@ export async function loadStoreProducts(): Promise<StoreProduct[]> {
 	return (rows as unknown as StoreProductRow[]).map(toStoreProduct);
 }
 
+/** Public products (all, or by slug) with everything needed to price an order. */
+export async function loadProductDetails(slugs?: string[]): Promise<ProductDetail[]> {
+	const query = db.from('products').select(STORE_PRODUCT_SELECT);
+	const rows = unwrap(await (slugs ? query.in('slug', slugs) : query));
+	return (rows as unknown as StoreProductRow[]).map(toProductDetail);
+}
+
 export async function loadProductDetail(slug: string): Promise<ProductDetail | null> {
 	const row = unwrap(
 		await db

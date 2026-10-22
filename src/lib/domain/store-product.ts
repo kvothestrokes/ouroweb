@@ -142,9 +142,10 @@ export function toProductDetail(row: StoreProductRow): ProductDetail {
 		precioBase: basePrice(row, type),
 		recargos: centsRecord(type?.recargos_talla),
 		guiaTallas: guide && typeof guide === 'object' ? (guide as SizeGuide) : {},
+		// Only products that inherit the garment type price get its bulk price.
 		// TODO(negocio): without a minimum quantity the bulk price cannot be offered yet.
 		mayoreo:
-			type?.precio_mayoreo != null && type.mayoreo_cantidad_min != null
+			row.precio_base === null && type?.precio_mayoreo != null && type.mayoreo_cantidad_min != null
 				? { precio: type.precio_mayoreo, cantidadMin: type.mayoreo_cantidad_min }
 				: null,
 		permitePersonalizar: row.permite_personalizar,
