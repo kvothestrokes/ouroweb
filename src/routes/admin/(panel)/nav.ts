@@ -45,7 +45,12 @@ export const NAV: NavItem[] = [
 	},
 	{ path: '/admin/disenos', label: 'Diseños', icon: Palette, route: '/admin/(panel)/disenos' },
 	{ path: '/admin/productos', label: 'Productos', icon: ShoppingBag },
-	{ path: '/admin/tipos-de-prenda', label: 'Tallas y precios', icon: Ruler },
+	{
+		path: '/admin/tipos-de-prenda',
+		label: 'Tallas y precios',
+		icon: Ruler,
+		route: '/admin/(panel)/tipos-de-prenda'
+	},
 	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers }
 ];
 
