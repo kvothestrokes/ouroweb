@@ -2,6 +2,19 @@ import { defineEnvVars } from '@sveltejs/kit/env';
 import { z } from 'zod';
 
 export const variables = defineEnvVars({
+	PUBLIC_SITE_URL: {
+		public: true,
+		description: 'Public base URL of the store, e.g. https://ouroweb.vercel.app',
+		schema: z.url()
+	},
+	PUBLIC_FOLIO_PREFIX: {
+		public: true,
+		description: 'Order folio prefix (OUR-YYMM-NNNN)',
+		schema: z
+			.string()
+			.regex(/^[A-Z]{2,5}$/, 'expected 2-5 uppercase letters, e.g. OUR')
+			.default('OUR')
+	},
 	PUBLIC_WHATSAPP_NUMBER: {
 		public: true,
 		description: 'Business WhatsApp number in international format, digits only',
@@ -35,6 +48,14 @@ export const variables = defineEnvVars({
 		public: true,
 		description: 'ImageKit public key',
 		schema: z.string().min(1)
+	},
+	PUBLIC_IMAGEKIT_ROOT: {
+		public: true,
+		description: 'Root folder in ImageKit for all store assets',
+		schema: z
+			.string()
+			.regex(/^[a-z0-9-]+$/, 'expected a folder name, e.g. ouroboros')
+			.default('ouroboros')
 	},
 	IMAGEKIT_PRIVATE_KEY: {
 		description: 'ImageKit private key, signs URLs and uploads. Server only',
