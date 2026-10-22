@@ -10,7 +10,7 @@ Tienda en línea de **Ouroboros**: playeras y sudaderas con diseños de anime / 
 
 ## Estado actual
 
-- Fase actual: **Fase 0 — Setup y validaciones** (proyecto SvelteKit 3, tema, Supabase enlazado y variables listos; spikes de ImageKit validados; carpetas de ImageKit listas; faltan logo y deploy).
+- Fase actual: **Fase 2 — Admin: catálogo**. Fase 1 completa salvo la semilla de prendas base y tipos de encargo (pendientes del negocio).
 - El progreso vive en la sección 12 (checklist) y 14 (registro) del spec.
 
 ## Stack

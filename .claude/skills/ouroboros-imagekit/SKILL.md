@@ -25,6 +25,8 @@ description: Cómo maneja Ouroboros las imágenes con ImageKit — estructura de
 
 ## Mockup automático
 
+> **Actualización 2026-10-22:** los mockups de prendas se componen en nuestro servidor con `sharp` (`src/lib/server/mockup.ts`), con las fotos base locales de `src/lib/server/assets/bases/` (`garment-assets.ts`). ImageKit queda como almacén privado de diseños y fotos reales de producto. Lo de abajo describe el enfoque original con overlays de ImageKit, validado en el spike.
+
 Datos (ver spec, sección 10): `garment_bases.area_impresion = { x, y, ancho }` en px del lienzo de la prenda base, `garment_bases.es_clara` y `designs.path_prenda_oscura | path_prenda_clara`.
 
 Composición (sintaxis de capas de ImageKit; las `/` de la ruta de la capa se escriben como `@@`):
