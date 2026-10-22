@@ -18,7 +18,7 @@ export type CategoryRow = CategoryInput & { id: string };
 
 export type CategoryTree = (CategoryRow & { children: CategoryRow[] })[];
 
-const SLUG_MESSAGE =
+export const SLUG_MESSAGE =
 	'El slug solo puede tener minúsculas, números y guiones (ej. playeras-con-diseno).';
 
 function text(form: FormData, name: string): string {

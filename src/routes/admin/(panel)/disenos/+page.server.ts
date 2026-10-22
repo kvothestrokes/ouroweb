@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { listDesigns, pickedFile, storeDesignFile } from '#lib/server/designs.js';
 import { deleteImageByPath } from '#lib/server/imagekit.js';
+import { deleteOrphans, findOrphans } from '#lib/server/orphans.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -61,5 +62,30 @@ export const actions = {
 			return fail(500, { message: 'No pudimos guardar el diseño. Intenta de nuevo.' });
 		}
 		redirect(303, `/admin/disenos/${data.id}`);
+	},
+
+	/** Dry run: lists stored files that nothing references (designs and product photos). */
+	revisar_huerfanos: async ({ locals }) => {
+		try {
+			const orphans = await findOrphans(locals.supabase);
+			return { orphans: orphans.map((file) => file.filePath) };
+		} catch {
+			return fail(500, { message: 'No pudimos revisar los archivos. Intenta de nuevo.' });
+		}
+	},
+
+	borrar_huerfanos: async ({ locals }) => {
+		try {
+			const { deleted, failed } = await deleteOrphans(locals.supabase);
+			if (failed)
+				return fail(500, { message: `Borramos ${deleted}; ${failed} no se pudieron borrar.` });
+			return {
+				success: deleted
+					? `Listo: borramos ${deleted} archivos sin usar.`
+					: 'No había archivos sin usar.'
+			};
+		} catch {
+			return fail(500, { message: 'No pudimos revisar los archivos. Intenta de nuevo.' });
+		}
 	}
 } satisfies Actions;

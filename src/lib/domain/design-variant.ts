@@ -4,6 +4,9 @@
  */
 export const MAX_DESIGN_WIDTH = 1600;
 
+/** Widest real product photo we store (served at most 1000 px). */
+export const MAX_PHOTO_WIDTH = 2000;
+
 export type DesignFiles = {
 	path_prenda_oscura: string | null;
 	path_prenda_clara: string | null;

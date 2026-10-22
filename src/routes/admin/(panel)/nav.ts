@@ -44,7 +44,12 @@ export const NAV: NavItem[] = [
 		route: '/admin/(panel)/prendas-base'
 	},
 	{ path: '/admin/disenos', label: 'Diseños', icon: Palette, route: '/admin/(panel)/disenos' },
-	{ path: '/admin/productos', label: 'Productos', icon: ShoppingBag },
+	{
+		path: '/admin/productos',
+		label: 'Productos',
+		icon: ShoppingBag,
+		route: '/admin/(panel)/productos'
+	},
 	{
 		path: '/admin/tipos-de-prenda',
 		label: 'Tallas y precios',

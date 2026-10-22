@@ -23,7 +23,7 @@
 	tienda solo se ven ya puestos sobre la prenda y con marca de agua.
 </p>
 
-<FormMessage error={form?.message} class="mt-6" />
+<FormMessage error={form?.message} success={form?.success} class="mt-6" />
 
 <details class="mt-6 rounded-xl border border-border bg-card" open={data.designs.length === 0}>
 	<summary
@@ -117,3 +117,48 @@
 		{/each}
 	</ul>
 {/if}
+
+<section
+	class="mt-12 max-w-3xl rounded-xl border border-border bg-card/50 p-5"
+	aria-labelledby="mantenimiento"
+>
+	<h2 id="mantenimiento" class="font-display text-lg text-foreground">Archivos sin usar</h2>
+	<p class="mt-1 text-sm text-muted-foreground">
+		Diseños y fotos de producto que quedaron guardados en ImageKit pero ya ningún producto ni diseño
+		usa. Solo se consideran los que tienen más de 10 minutos.
+	</p>
+	{#if form?.orphans}
+		{#if form.orphans.length === 0}
+			<p class="mt-3 text-sm text-success">No hay archivos sin usar.</p>
+		{:else}
+			<p class="mt-3 text-sm text-foreground">
+				Hay {form.orphans.length}
+				{form.orphans.length === 1 ? 'archivo' : 'archivos'} sin usar:
+			</p>
+			<ul class="mt-2 max-h-40 overflow-y-auto text-xs text-muted-foreground">
+				{#each form.orphans as path (path)}
+					<li class="truncate">{path}</li>
+				{/each}
+			</ul>
+			<form
+				method="POST"
+				action="?/borrar_huerfanos"
+				class="mt-3"
+				use:enhance={({ cancel }) => {
+					if (!confirm('¿Borrar estos archivos de ImageKit? No se puede deshacer.')) cancel();
+				}}
+			>
+				<button
+					type="submit"
+					class="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm text-danger hover:bg-danger/10"
+				>
+					Borrar archivos sin usar
+				</button>
+			</form>
+		{/if}
+	{:else}
+		<form method="POST" action="?/revisar_huerfanos" class="mt-3" use:enhance>
+			<Button type="submit" variant="outline" class="min-h-11">Revisar</Button>
+		</form>
+	{/if}
+</section>

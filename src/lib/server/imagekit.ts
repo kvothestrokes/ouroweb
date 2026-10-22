@@ -133,3 +133,24 @@ export async function deleteImageByPath(path: string): Promise<boolean> {
 		return false;
 	}
 }
+
+/** Every file in one of the known folders (paginated listing of the ImageKit media library). */
+export async function listFolderFiles(
+	folder: Folder
+): Promise<{ fileId: string; filePath: string; createdAt: string }[]> {
+	const files: { fileId: string; filePath: string; createdAt: string }[] = [];
+	const limit = 100;
+	for (let skip = 0; ; skip += limit) {
+		const page = await client.assets.list({ path: FOLDERS[folder], type: 'file', limit, skip });
+		for (const asset of page) {
+			if ('fileId' in asset && asset.fileId && asset.filePath && asset.createdAt) {
+				files.push({ fileId: asset.fileId, filePath: asset.filePath, createdAt: asset.createdAt });
+			}
+		}
+		if (page.length < limit) return files;
+	}
+}
+
+export async function deleteFileById(fileId: string): Promise<void> {
+	await client.files.delete(fileId);
+}

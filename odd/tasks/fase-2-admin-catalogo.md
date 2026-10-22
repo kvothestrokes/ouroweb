@@ -16,15 +16,15 @@ Assumptions (marked, to confirm): S6 sizes also apply to Sudadera; S7 prices app
 
 ## Tasks
 
-| ID  | Specs      | Route  | Status  | Evidence                                                                                                                                              |
-| --- | ---------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T0  | S3, S6, S7 | inline | done    | RED 3 fails → pushed `20261022090428_precios_y_tallas`; db:smoke 45/45                                                                                |
-| T1  | S1         | inline | done    | c5487a9 + fix 47d6fb6; tests 16/16; prod build CSRF 403, HttpOnly; security review B1 closed                                                          |
-| T2  | S2         | inline | done    | domain tests 12/12; browser: star swap, create/edit/delete, root-star and delete-with-children rejected, duplicate collection slug                    |
-| T3  | S3         | inline | done    | migration fc84a34; tests 39/39; browser: 19 registered, drag + save to all verified in DB                                                             |
-| T4  | S4         | inline | done    | tests 9/9 new; browser + ImageKit: jpg rejected, downscale 1600, 19 previews, private 403, replace and delete leave no orphans                        |
-| T5  | S5, S7     | inline | pending |                                                                                                                                                       |
-| T6  | S6, S7     | inline | done    | tests 9/9 new; browser: move keeps typed values, invalid mayoreo rejected, Playera restored exactly, temp type created/deleted, mobile overflow fixed |
+| ID  | Specs      | Route  | Status | Evidence                                                                                                                                                                       |
+| --- | ---------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T0  | S3, S6, S7 | inline | done   | RED 3 fails → pushed `20261022090428_precios_y_tallas`; db:smoke 45/45                                                                                                         |
+| T1  | S1         | inline | done   | c5487a9 + fix 47d6fb6; tests 16/16; prod build CSRF 403, HttpOnly; security review B1 closed                                                                                   |
+| T2  | S2         | inline | done   | domain tests 12/12; browser: star swap, create/edit/delete, root-star and delete-with-children rejected, duplicate collection slug                                             |
+| T3  | S3         | inline | done   | migration fc84a34; tests 39/39; browser: 19 registered, drag + save to all verified in DB                                                                                      |
+| T4  | S4         | inline | done   | tests 9/9 new; browser + ImageKit: jpg rejected, downscale 1600, 19 previews, private 403, replace and delete leave no orphans                                                 |
+| T5  | S5, S7     | inline | done   | migration 70c7e89 (db:smoke 55/55); domain tests; browser: mockup+stock, edit, validation, photo product (upload/reorder/delete), list/search, cleanup; orphan sweep deleted 5 |
+| T6  | S6, S7     | inline | done   | tests 9/9 new; browser: move keeps typed values, invalid mayoreo rejected, Playera restored exactly, temp type created/deleted, mobile overflow fixed                          |
 
 Route evidence: sequential units sharing `hooks.server.ts`, the admin layout and the schema; no Writer trigger reason. T0 and T1 are high risk (persisted schema; auth guard) → independent verifier.
 
