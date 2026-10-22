@@ -18,7 +18,7 @@ Objective: schema, RLS, atomic folio, seed data and admin user on the linked Sup
 | T2  | S2    | inline | done    | pushed; db:smoke 41/41                        |
 | T3  | S3    | inline | done    | pushed; db:smoke 41/41                        |
 | T4  | S4    | inline | partial | garment_bases blocked by TODO(negocio) photos |
-| T5  | S5    | inline | pending |                                               |
+| T5  | S5    | inline | done    | sign-in + RLS read + is_admin() verified      |
 
 Route evidence: one understood schema change written sequentially; no Writer trigger reason (no parallel units, no context backstop). High risk (items 1 and 2: persisted schema, RLS) → independent verifier before closing.
 
@@ -27,3 +27,4 @@ Route evidence: one understood schema change written sequentially; no Writer tri
 - L1 (2026-10-22, user): "ya deployé a vercel y funciona bien avancemos con la siguiente fase"
 - L2 (2026-10-22, user, on Docker vs remote): "directo" — migrations are applied straight to the linked remote project `wgejdiewrysbuduahptu` (still empty).
 - L3 (2026-10-22): pre-push security review (revisor-seguridad): 0 blockers; applied advisories 1, 2, 3, 6, 7, 9 and part of 10 before push. Pushed 3 migrations + seed; `npm run db:smoke` 41/41 passing twice. Next: T5 admin user (needs email from user).
+- L4 (2026-10-22, user): admin email "paogleez97@gmail.com". Admin created with app_metadata.role = 'admin'; random password stored in a 600-mode scratchpad file, never printed. Verified sign-in, RLS read of settings and is_admin() = true.
