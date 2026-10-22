@@ -22,7 +22,7 @@ Assumptions (marked, to confirm): S6 sizes also apply to Sudadera; S7 prices app
 | T1  | S1         | inline | done    | c5487a9 + fix 47d6fb6; tests 16/16; prod build CSRF 403, HttpOnly; security review B1 closed                                       |
 | T2  | S2         | inline | done    | domain tests 12/12; browser: star swap, create/edit/delete, root-star and delete-with-children rejected, duplicate collection slug |
 | T3  | S3         | inline | done    | migration fc84a34; tests 39/39; browser: 19 registered, drag + save to all verified in DB                                          |
-| T4  | S4         | inline | pending | depends on T3 decision                                                                                                             |
+| T4  | S4         | inline | done    | tests 9/9 new; browser + ImageKit: jpg rejected, downscale 1600, 19 previews, private 403, replace and delete leave no orphans     |
 | T5  | S5, S7     | inline | pending |                                                                                                                                    |
 | T6  | S6, S7     | inline | pending |                                                                                                                                    |
 

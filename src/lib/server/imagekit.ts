@@ -101,3 +101,35 @@ export async function uploadImage(file: File, folder: Folder): Promise<string> {
 export function uploadAuthParams() {
 	return client.helper.getAuthenticationParameters();
 }
+
+/** Downloads a stored image (private ones too) into the server; never sent to the browser as is. */
+export async function downloadImage(path: string): Promise<Buffer> {
+	const response = await fetch(signedImageUrl(path));
+	if (!response.ok) throw new Error(`ImageKit download failed (${response.status}) for ${path}`);
+	return Buffer.from(await response.arrayBuffer());
+}
+
+/**
+ * Best-effort removal of a stored file by its `filePath` (the database keeps paths, not
+ * file ids). Names are unique (`useUniqueFileName`), so folder + name finds exactly one file.
+ * Returns false when nothing was deleted; callers must not fail the user action on it.
+ */
+export async function deleteImageByPath(path: string): Promise<boolean> {
+	const slash = path.lastIndexOf('/');
+	const folder = path.slice(0, slash) || '/';
+	const name = path.slice(slash + 1);
+	if (!name || name.includes('"')) return false;
+	try {
+		const assets = await client.assets.list({
+			path: folder,
+			type: 'file',
+			searchQuery: `name = "${name}"`
+		});
+		const match = assets.find((asset) => 'filePath' in asset && asset.filePath === path);
+		if (!match || !('fileId' in match) || !match.fileId) return false;
+		await client.files.delete(match.fileId);
+		return true;
+	} catch {
+		return false;
+	}
+}

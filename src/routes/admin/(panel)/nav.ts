@@ -43,7 +43,7 @@ export const NAV: NavItem[] = [
 		icon: Shirt,
 		route: '/admin/(panel)/prendas-base'
 	},
-	{ path: '/admin/disenos', label: 'Diseños', icon: Palette },
+	{ path: '/admin/disenos', label: 'Diseños', icon: Palette, route: '/admin/(panel)/disenos' },
 	{ path: '/admin/productos', label: 'Productos', icon: ShoppingBag },
 	{ path: '/admin/tipos-de-prenda', label: 'Tallas y precios', icon: Ruler },
 	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers }
