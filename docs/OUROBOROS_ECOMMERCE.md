@@ -47,6 +47,11 @@ El cliente puede **pedir productos del catálogo** o **solicitar encargos especi
 | Fuentes                                   | Autohospedadas con Fontsource (Inter Variable y Cinzel), sin Google Fonts                                                                                                                                                               |
 | Firma de URLs de ImageKit                 | Firma propia (`src/lib/server/imagekit-signing.ts`, HMAC-SHA1 igual al SDK) con expiración fija por día; el SDK solo soporta "ahora + N segundos"                                                                                       |
 | Subidas desde el admin                    | Diseños y fotos de producto se suben desde el panel en Fase 2 reutilizando `src/lib/server/imagekit.ts`; los diseños se suben como archivos privados de ImageKit                                                                        |
+| Dinero en la BD                           | Enteros en centavos (MXN) en todas las columnas de precio y monto; `null` en personalización, envío, anticipo y precio de encargo significa "por cotizar"                                                                               |
+| Rol de admin                              | `public.is_admin()`: usuario autenticado con `app_metadata.role = 'admin'` (solo se asigna con la llave secreta)                                                                                                                        |
+| Permisos de tablas nuevas                 | Las tablas y funciones nuevas en `public` nacen cerradas (default privileges revocados): cada migración da sus grants y activa RLS                                                                                                      |
+| Precio de encargo                         | `custom_requests.precio_final` (null = por cotizar), reflejado en `orders.subtotal`; la BD valida `total = subtotal − descuentos + personalización + envío`                                                                             |
+| Folio en BD                               | `next_folio(prefijo, fecha)` solo para `service_role`; periodo en hora de `America/Mexico_City`; error si pasa de 9999 en un mes                                                                                                        |
 
 ---
 
@@ -306,7 +311,7 @@ Sigue tu pedido aquí: {{link_seguimiento}}
 **Enlaces:**
 
 - Cliente → negocio: `https://wa.me/529612423984?text=` + `encodeURIComponent(mensaje)`
-- Negocio → cliente: `https://wa.me/52{whatsapp_cliente}?text=` + `encodeURIComponent(mensaje)`
+- Negocio → cliente: `https://wa.me/{whatsapp_cliente}?text=` + `encodeURIComponent(mensaje)` (`orders.cliente_whatsapp` ya se guarda normalizado como `52XXXXXXXXXX`)
 
 ---
 
@@ -402,9 +407,9 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 
 ### Fase 1 — Base de datos 🟡
 
-- [ ] Migraciones de todas las tablas
-- [ ] Políticas RLS
-- [ ] Función de folio atómico
+- [x] Migraciones de todas las tablas
+- [x] Políticas RLS
+- [x] Función de folio atómico
 - [ ] Datos semilla: categorías, tipos de prenda, prendas base, plantillas de WhatsApp, ajustes
 - [ ] Usuario admin
 
@@ -503,3 +508,4 @@ Leyenda: ⬜ pendiente · 🟡 en progreso · ✅ terminado
 | 2026-10-22 | Fase 0     | ✅ Spikes de ImageKit: overlay privado en URL firmada y expiración fija con caché                                            | Diseño privado como capa: 200; diseño sin firma: 403; `ik-t` fijo por día; segunda carga `Hit from cloudfront`. El área de impresión va en px de la base real (la de prueba mide 1285×1224) y el diseño oscuro sobre prenda oscura requiere la versión clara. La ruta `/spike/imagekit` sigue disponible solo en dev                                                                                                                                                                                                                                                                                                           |
 | 2026-10-22 | Fase 0     | ✅ Estructura de carpetas en ImageKit                                                                                        | Verificada con el SDK: `/ouroboros/{bases,brand,designs,gallery,orders,products}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 2026-10-22 | Fase 0     | ✅ Deploy inicial en Vercel                                                                                                  | Confirmado funcionando por el usuario. La Fase 0 queda abierta solo por el logo (pendiente de negocio, sección 13), que no bloquea la Fase 1. Siguiente: Fase 1 — Base de datos                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-10-22 | Fase 1     | ✅ Migraciones de las 24 tablas, RLS y folio atómico aplicados al remoto; 🟡 semilla parcial                                 | Aplicado directo al proyecto remoto (sin Docker local). `npm run db:smoke` (41 pruebas: RLS anon, folio concurrente, reinicio mensual y zona horaria, semilla) pasa. Semilla: ajustes, 20 categorías, playera y sudadera, 9 plantillas de WhatsApp; las prendas base y los tipos de encargo esperan fotos y precios del negocio. Tipos generados en `src/lib/types/database.ts` (`npm run db:types`). Revisión de seguridad previa al push: sin bloqueadores. Falta: usuario admin                                                                                                                                             |

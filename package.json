@@ -13,7 +13,9 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"test": "npm run test:unit -- --run",
+		"db:smoke": "node --env-file=.env scripts/db-smoke.mjs",
+		"db:types": "supabase gen types typescript --linked > src/lib/types/database.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
