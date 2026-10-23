@@ -50,7 +50,7 @@
 					{#snippet action()}
 						<a
 							href={resolve('/(store)/buscar')}
-							class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-gold-light"
+							class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 						>
 							Explorar la tienda
 						</a>

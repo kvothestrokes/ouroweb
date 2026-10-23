@@ -69,7 +69,7 @@
 										PUBLIC_WHATSAPP_NUMBER,
 										`Hola, busco algo de «${data.filters.q}». ¿Me lo pueden hacer?`
 									)}
-									class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-gold-light"
+									class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 								>
 									Pide un encargo
 								</ExternalLink>

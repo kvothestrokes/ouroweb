@@ -14,6 +14,7 @@
 	import ReviewList from '#lib/components/store/ReviewList.svelte';
 	import SizeGuide from '#lib/components/store/SizeGuide.svelte';
 	import StockBadge from '#lib/components/store/StockBadge.svelte';
+	import { stageTint } from '#lib/domain/color.js';
 	import { formatMoney } from '#lib/domain/money.js';
 	import { availableSizes, imageUrl, productImages } from '#lib/domain/store-product.js';
 	import { MAX_QUANTITY, cart } from '#lib/stores/cart.svelte.js';
@@ -47,6 +48,15 @@
 	let showErrors = $derived.by(() => (void product.id, false));
 
 	const sizes = $derived(availableSizes(product, color));
+	const isMockup = $derived(product.tipoImagen === 'mockup');
+	/** Soft garment-color backdrop for mockups (their photos have a white background). */
+	const tintFor = (key: string | null) => {
+		const hex = product.colorOptions.find((option) => option.key === key)?.hex;
+		return isMockup && hex ? stageTint(hex) : null;
+	};
+	const otherColors = $derived(
+		product.colorOptions.filter((option) => option.key !== color).slice(0, 4)
+	);
 	/** A size not available in the chosen color counts as not chosen. */
 	const talla = $derived(pickedSize && sizes.includes(pickedSize) ? pickedSize : null);
 	const colorName = $derived(product.colorOptions.find((option) => option.key === color)?.nombre);
@@ -144,11 +154,13 @@
 	<div class="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
 		<!-- Gallery -->
 		<div class="flex flex-col gap-3">
-			<div class="relative overflow-hidden rounded-2xl">
+			<div class="relative overflow-hidden rounded-[28px]">
 				{#if image}
 					<ProtectedImage
 						{image}
 						eager
+						tint={tintFor(color)}
+						blend={isMockup}
 						alt={colorName ? `${product.nombre} en color ${colorName}` : product.nombre}
 						sizes="(min-width: 1024px) 55vw, 100vw"
 						class="aspect-[4/5]"
@@ -159,6 +171,32 @@
 					</div>
 				{/if}
 			</div>
+			{#if isMockup && otherColors.length}
+				<ul class="hidden grid-cols-2 gap-3 lg:grid" aria-label="Otros colores">
+					{#each otherColors as option (option.key)}
+						{@const preview = images.find((item) => item.key === option.key)}
+						{#if preview}
+							<li>
+								<button
+									type="button"
+									onclick={() => (color = option.key)}
+									aria-label="Ver en color {option.nombre}"
+									class="block w-full overflow-hidden rounded-[22px] transition-transform hover:-translate-y-0.5"
+								>
+									<ProtectedImage
+										image={preview}
+										alt=""
+										sizes="25vw"
+										tint={tintFor(option.key)}
+										blend
+										class="aspect-square"
+									/>
+								</button>
+							</li>
+						{/if}
+					{/each}
+				</ul>
+			{/if}
 			{#if product.tipoImagen === 'foto' && images.length > 1}
 				<ul class="flex gap-2 overflow-x-auto" aria-label="Fotos">
 					{#each images as photo, i (photo.key)}
@@ -192,7 +230,9 @@
 						{#if product.fandom}<FandomBadge nombre={product.fandom} />{/if}
 					</div>
 					<div class="flex items-start justify-between gap-4">
-						<h1 class="text-2xl leading-tight md:text-3xl">{product.nombre}</h1>
+						<h1 class="font-display text-3xl leading-tight font-bold md:text-4xl">
+							{product.nombre}
+						</h1>
 						<FavoriteButton
 							slug={product.slug}
 							nombre={product.nombre}
@@ -201,7 +241,10 @@
 						/>
 					</div>
 					<p
-						class="flex flex-wrap items-baseline gap-x-3 text-2xl font-semibold text-gold tabular-nums"
+						class={cn(
+							'flex flex-wrap items-baseline gap-x-3 text-3xl font-bold tabular-nums',
+							regularPrice !== null ? 'text-sale' : 'text-foreground'
+						)}
 					>
 						{#if unitPrice !== null}
 							{formatMoney(unitPrice)}
@@ -210,11 +253,9 @@
 									<span class="sr-only">Antes</span>
 									{formatMoney(regularPrice)}
 								</s>
-								<span
-									class="rounded-full bg-gold px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+								<span class="rounded-full bg-sale px-2.5 py-1 text-xs font-bold text-on-sale"
+									>Oferta −{Math.round((1 - unitPrice / regularPrice) * 100)}%</span
 								>
-									Oferta
-								</span>
 							{/if}
 						{:else}
 							<span class="text-lg font-normal text-muted-foreground">Precio por cotizar</span>
@@ -227,12 +268,44 @@
 						<legend class="mb-2 text-sm">
 							Color: <span class="text-muted-foreground">{colorName ?? 'elige uno'}</span>
 						</legend>
-						<ColorSwatches
-							colors={product.colorOptions}
-							selected={color}
-							onselect={(key) => (color = key)}
-							size="md"
-						/>
+						{#if isMockup && product.colorOptions.length <= 8}
+							<div class="flex flex-wrap gap-2">
+								{#each product.colorOptions as option (option.key)}
+									{@const preview = images.find((item) => item.key === option.key)}
+									<button
+										type="button"
+										onclick={() => (color = option.key)}
+										aria-label="Color {option.nombre}"
+										aria-pressed={color === option.key}
+										title={option.nombre}
+										class={cn(
+											'w-14 overflow-hidden rounded-xl border-2 transition-colors',
+											color === option.key
+												? 'border-foreground'
+												: 'border-transparent hover:border-border'
+										)}
+									>
+										{#if preview}
+											<ProtectedImage
+												image={preview}
+												alt=""
+												sizes="56px"
+												tint={tintFor(option.key)}
+												blend
+												class="aspect-[7/8]"
+											/>
+										{/if}
+									</button>
+								{/each}
+							</div>
+						{:else}
+							<ColorSwatches
+								colors={product.colorOptions}
+								selected={color}
+								onselect={(key) => (color = key)}
+								size="md"
+							/>
+						{/if}
 					</fieldset>
 				{/if}
 
@@ -262,16 +335,21 @@
 									aria-pressed={talla === size}
 									onclick={() => (pickedSize = size)}
 									class={cn(
-										'flex min-h-11 min-w-14 flex-col items-center justify-center rounded-lg border px-3 text-sm transition-colors',
+										'flex min-h-12 min-w-14 flex-col items-center justify-center rounded-xl border px-3 text-sm font-medium transition-colors',
 										talla === size
-											? 'border-gold bg-gold/10 text-foreground'
-											: 'border-border hover:border-foreground/40',
+											? 'border-primary bg-primary text-primary-foreground'
+											: 'border-border bg-card hover:border-foreground',
 										!available && 'cursor-not-allowed text-muted-foreground/50 line-through'
 									)}
 								>
 									{size}
 									{#if available && product.recargos[size]}
-										<span class="text-[11px] text-muted-foreground tabular-nums">
+										<span
+											class={cn(
+												'text-[11px] tabular-nums',
+												talla === size ? 'text-primary-foreground/80' : 'text-muted-foreground'
+											)}
+										>
 											+{formatMoney(product.recargos[size])}
 										</span>
 									{/if}
@@ -327,17 +405,29 @@
 						</button>
 					</div>
 					{#if product.mayoreo}
-						<p
-							class={cn(
-								'text-sm',
-								cantidad >= product.mayoreo.cantidadMin ? 'text-success' : 'text-muted-foreground'
-							)}
+						{@const missingPieces = Math.max(0, product.mayoreo.cantidadMin - qty)}
+						<div
+							class="mt-1 flex flex-col gap-2 rounded-2xl bg-gold-fill/15 p-4"
+							aria-live="polite"
 						>
-							Mayoreo: desde {product.mayoreo.cantidadMin} piezas a {formatMoney(
-								product.mayoreo.precio
-							)}
-							c/u. Lo aplicamos al confirmar tu pedido.
-						</p>
+							<p class="text-sm">
+								{#if missingPieces}
+									<strong>Precio de mayoreo:</strong> agrega {missingPieces}
+									{missingPieces === 1 ? 'pieza' : 'piezas'} más y paga {formatMoney(
+										product.mayoreo.precio
+									)} c/u.
+								{:else}
+									<strong>¡Precio de mayoreo!</strong>
+									{formatMoney(product.mayoreo.precio)} c/u al confirmar tu pedido.
+								{/if}
+							</p>
+							<span class="h-1.5 overflow-hidden rounded-full bg-gold-fill/25" aria-hidden="true">
+								<span
+									class="block h-full rounded-full bg-gold-fill transition-[width] duration-300"
+									style:width="{Math.min(100, (qty / product.mayoreo.cantidadMin) * 100)}%"
+								></span>
+							</span>
+						</div>
 					{:else if isGarment}
 						<p class="text-sm text-muted-foreground">
 							¿Vas a pedir varias? Pregúntanos por precio de mayoreo.
@@ -346,12 +436,19 @@
 				</div>
 
 				{#if product.permitePersonalizar}
-					<div class="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+					<div
+						class={cn(
+							'flex flex-col gap-3 rounded-2xl border-2 border-dashed p-4 transition-colors',
+							personalizar ? 'border-purple-light bg-accent/8' : 'border-accent/40'
+						)}
+					>
 						<label class="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
 							<input type="checkbox" bind:checked={personalizar} class="size-5 accent-gold" />
-							<span>
-								Personalizar
-								<span class="block text-xs text-muted-foreground">Personalización por cotizar</span>
+							<span class="font-semibold text-purple-light">
+								Personalízala: tu nombre, otra frase o tu idea
+								<span class="block text-xs font-normal text-muted-foreground"
+									>Personalización por cotizar</span
+								>
 							</span>
 						</label>
 						{#if personalizar}
@@ -439,7 +536,7 @@
 	{#if compact && added}
 		<a
 			href={resolve('/(store)/carrito')}
-			class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light"
+			class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
 		>
 			<Check size={18} stroke-width={1.75} />
 			Ver carrito
@@ -449,7 +546,7 @@
 			type="button"
 			onclick={addToCart}
 			disabled={soldOut}
-			class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50"
+			class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			{#if added}
 				<Check size={18} stroke-width={1.75} />

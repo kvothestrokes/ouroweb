@@ -1,13 +1,20 @@
 ---
 name: ouroboros-ui
-description: Sistema de diseño de la tienda Ouroboros (tema oscuro negro + dorado con acento morado, Tailwind v4, shadcn-svelte, Svelte 5). Úsala siempre que crees o modifiques una página, componente, layout o estilo de la tienda o del panel de admin, o cuando pidan que algo "se vea mejor".
+description: Sistema de diseño de la tienda Ouroboros (dos temas: día predeterminado papel + tinta + dorado, y noche negro + dorado; acento morado; Tailwind v4, shadcn-svelte, Svelte 5). Úsala siempre que crees o modifiques una página, componente, layout o estilo de la tienda o del panel de admin, o cuando pidan que algo "se vea mejor".
 ---
 
 # Ouroboros — sistema de diseño
 
 ## Dirección visual
 
-Oscuro premium inspirado en tiendas de moda (Zara, Uniqlo, H&M): mucha imagen, poco texto, grids limpios, aire generoso. El dorado es la marca; el morado es acento puntual. El negro hace resaltar los diseños de anime.
+Moda en línea (Zara, H&M, Uniqlo, Shein): mucha imagen, tipografía grande, grids limpios, aire generoso. Dos temas: **día** (predeterminado: papel cálido, tinta y dorado) y **noche** (negro y dorado). `<html class="dark">` activa noche; el interruptor es `ThemeToggle` y la elección se guarda en `localStorage` (`ouroboros:tema`). Los componentes solo usan tokens: nunca `dark:` salvo un ajuste puntual.
+
+- **Dorado tiene dos roles:** `text-gold` es dorado para texto (oscuro de día para pasar AA) y `bg-gold-fill` es el dorado de superficie, con texto `text-on-gold`.
+- **CTA principal:** `bg-primary text-primary-foreground hover:bg-primary-hover` (tinta de día, dorado de noche).
+- **Ofertas:** `text-sale` / `bg-sale text-on-sale`.
+- **Sección siempre oscura dentro del día** (footer, banner destacado): agrega la clase `dark` a la sección; los tokens se recalculan solos.
+- **Fotos de prenda:** `ProtectedImage` con `tint={stageTint(hex)}` y `blend` (multiplica la foto de fondo blanco sobre un pastel del color). El escenario es claro en ambos temas.
+- **Chips sobre fotos:** `bg-overlay text-overlay-foreground` (iguales en ambos temas).
 
 ## Tokens (definidos en `src/app.css`)
 
@@ -29,7 +36,7 @@ Oscuro premium inspirado en tiendas de moda (Zara, Uniqlo, H&M): mucha imagen, p
 
 - Títulos (`h1`–`h3`, nombres de categoría, hero): `font-display` (Cinzel).
 - Todo lo demás: `font-sans` (Inter).
-- Precios: `font-sans font-semibold tabular-nums text-gold`.
+- Precios: `font-bold tabular-nums text-foreground`; en oferta `text-sale` con el normal tachado (`<s>` + `sr-only` «antes»). Etiqueta de oferta: `bg-sale text-on-sale`.
 - Formato de dinero: `Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })`, en una utilidad compartida `src/lib/domain/money.ts`.
 
 ## Patrones de la tienda

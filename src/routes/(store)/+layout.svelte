@@ -11,7 +11,7 @@
 
 {#if navigating.to}
 	<div
-		class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-gold"
+		class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-gold-fill"
 		role="progressbar"
 		aria-label="Cargando"
 	></div>
@@ -24,7 +24,7 @@
 	Saltar al contenido
 </a>
 
-<div class="flex min-h-dvh flex-col">
+<div class="flex min-h-dvh flex-col pb-16 lg:pb-0">
 	<StoreHeader categories={data.categories} />
 	<main id="contenido" class="flex-1">
 		{@render children()}

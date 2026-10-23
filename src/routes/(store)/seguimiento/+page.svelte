@@ -102,7 +102,7 @@
 		<button
 			type="submit"
 			disabled={sending}
-			class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-gold-light disabled:opacity-50"
+			class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
 		>
 			<PackageSearch size={18} stroke-width={1.75} aria-hidden="true" />
 			{sending ? 'Buscando…' : 'Buscar'}
@@ -137,7 +137,7 @@
 								<span
 									class={cn(
 										'absolute top-7 left-[13px] h-full w-0.5',
-										date ? 'bg-gold/60' : 'bg-border'
+										date ? 'bg-gold-fill/60' : 'bg-border'
 									)}
 									aria-hidden="true"
 								></span>
@@ -146,7 +146,7 @@
 								class={cn(
 									'relative z-10 grid size-7 shrink-0 place-items-center rounded-full border text-xs',
 									date
-										? 'border-gold bg-gold text-primary-foreground'
+										? 'border-gold bg-gold-fill text-on-gold'
 										: 'border-border bg-background text-muted-foreground',
 									current && 'ring-4 ring-gold/25'
 								)}
@@ -292,7 +292,7 @@
 					<button
 						type="submit"
 						disabled={sending}
-						class="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-gold-light disabled:opacity-50"
+						class="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
 					>
 						{sending ? 'Enviando…' : 'Enviar reseña'}
 					</button>

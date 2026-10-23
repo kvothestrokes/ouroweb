@@ -1,8 +1,10 @@
 /*
- * Ouroboros — theme tokens (premium dark: black + gold, purple accent).
- * Merged from setup/app.css with the shadcn-svelte init output.
- * The site is dark only: values live directly in :root and <html> carries the
- * `dark` class so shadcn `dark:` variants always apply.
+ * Ouroboros — theme tokens. Two themes: day (default, warm paper + ink + gold) and night
+ * (black + gold, purple accent). <html> gets the `dark` class for night; components only use
+ * these tokens, so they follow the theme without `dark:` variants.
+ *
+ * Gold has two roles: `gold` is gold for TEXT (dark gold by day so it passes AA on paper) and
+ * `gold-fill` is the brand gold for surfaces (badges, dots), the same in both themes.
  */
 @import 'tailwindcss';
 @import 'tw-animate-css';
@@ -14,38 +16,50 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Day (default) ──────────────────────────── */
 :root {
-	color-scheme: dark;
+	color-scheme: light;
 
-	/* ── Brand ─────────────────────────────────── */
-	--gold: #d4af37;
-	--gold-light: #f2d27a;
+	/* Brand */
+	--gold: #7a5c0c;
+	--gold-fill: #d4af37;
+	--on-gold: #17141c;
+	/* Light chips over photos (same in both themes: photos sit on a light stage) */
+	--overlay: #ffffff;
+	--overlay-foreground: #17141c;
+	--overlay-line: #e6dfd3;
+	--gold-light: #b8912a;
 	--purple: #6d28d9;
-	--purple-light: #a78bfa;
+	--purple-light: #6d28d9;
+	--sale: #c2410c;
+	--on-sale: #ffffff;
 
-	/* ── Surfaces and text ─────────────────────── */
-	--bg: #0a0a0b;
-	--surface: #141416;
-	--surface-raised: #1c1c20;
-	--line: #2a2a30;
-	--text: #f5f3ee;
-	--text-muted: #a1a1aa;
+	/* Surfaces and text */
+	--bg: #faf7f2;
+	--surface: #ffffff;
+	--surface-raised: #f1ebe1;
+	--line: #e6dfd3;
+	--text: #17141c;
+	--text-muted: #5e5764;
+	/* Product photo backdrop when no color tint applies */
+	--stage: #efe9df;
 
-	/* ── States ────────────────────────────────── */
-	--success: #22c55e;
-	--warning: #f59e0b;
-	--danger: #ef4444;
+	/* States */
+	--success: #15803d;
+	--warning: #b45309;
+	--danger: #b91c1c;
 
-	/* ── shadcn-svelte variables ───────────────── */
+	/* shadcn-svelte variables */
 	--radius: 0.75rem;
 	--background: var(--bg);
 	--foreground: var(--text);
 	--card: var(--surface);
 	--card-foreground: var(--text);
-	--popover: var(--surface-raised);
+	--popover: var(--surface);
 	--popover-foreground: var(--text);
-	--primary: var(--gold);
-	--primary-foreground: #0a0a0b;
+	--primary: #17141c;
+	--primary-hover: #2e2936;
+	--primary-foreground: #faf7f2;
 	--secondary: var(--surface-raised);
 	--secondary-foreground: var(--text);
 	--muted: var(--surface-raised);
@@ -55,22 +69,75 @@
 	--destructive: var(--danger);
 	--border: var(--line);
 	--input: var(--line);
-	--ring: var(--purple-light);
+	--ring: #6d28d9;
 
-	--chart-1: var(--gold);
-	--chart-2: var(--purple-light);
-	--chart-3: var(--gold-light);
-	--chart-4: var(--purple);
+	--chart-1: var(--gold-fill);
+	--chart-2: var(--purple);
+	--chart-3: var(--gold);
+	--chart-4: var(--sale);
 	--chart-5: var(--text-muted);
 
 	--sidebar: var(--surface);
 	--sidebar-foreground: var(--text);
-	--sidebar-primary: var(--gold);
-	--sidebar-primary-foreground: #0a0a0b;
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-foreground);
 	--sidebar-accent: var(--surface-raised);
 	--sidebar-accent-foreground: var(--text);
 	--sidebar-border: var(--line);
-	--sidebar-ring: var(--purple-light);
+	--sidebar-ring: var(--ring);
+}
+
+/* ── Night ─────────────────────────────────── */
+.dark {
+	color-scheme: dark;
+
+	--gold: #d4af37;
+	--gold-light: #f2d27a;
+	--purple-light: #a78bfa;
+	--sale: #fb923c;
+	--on-sale: #17141c;
+
+	--bg: #0b0a0d;
+	--surface: #15131a;
+	--surface-raised: #1e1b24;
+	--line: #2a2631;
+	--text: #f4f1ea;
+	--text-muted: #a8a2ae;
+	--stage: #e9e4dc;
+
+	--success: #4ade80;
+	--warning: #fbbf24;
+	--danger: #f87171;
+
+	/* Re-derived here so a nested `.dark` section (the footer) recomputes them too */
+	--background: var(--bg);
+	--foreground: var(--text);
+	--card: var(--surface);
+	--card-foreground: var(--text);
+	--popover: var(--surface-raised);
+	--popover-foreground: var(--text);
+	--secondary: var(--surface-raised);
+	--secondary-foreground: var(--text);
+	--muted: var(--surface-raised);
+	--muted-foreground: var(--text-muted);
+	--destructive: var(--danger);
+	--border: var(--line);
+	--input: var(--line);
+	--sidebar: var(--surface);
+	--sidebar-foreground: var(--text);
+	--sidebar-accent: var(--surface-raised);
+	--sidebar-accent-foreground: var(--text);
+	--sidebar-border: var(--line);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-foreground);
+	--sidebar-ring: var(--ring);
+	--chart-3: var(--gold);
+	--chart-4: var(--sale);
+	--chart-5: var(--text-muted);
+	--primary: #d4af37;
+	--primary-hover: #f2d27a;
+	--primary-foreground: #17141c;
+	--ring: #a78bfa;
 }
 
 @theme inline {
@@ -79,6 +146,15 @@
 		'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
 	--color-gold: var(--gold);
+	--color-gold-fill: var(--gold-fill);
+	--color-on-gold: var(--on-gold);
+	--color-overlay: var(--overlay);
+	--color-overlay-foreground: var(--overlay-foreground);
+	--color-overlay-line: var(--overlay-line);
+	--color-sale: var(--sale);
+	--color-on-sale: var(--on-sale);
+	--color-stage: var(--stage);
+	--color-primary-hover: var(--primary-hover);
 	--color-gold-light: var(--gold-light);
 	--color-purple: var(--purple);
 	--color-purple-light: var(--purple-light);
@@ -156,14 +232,13 @@
 	}
 }
 
-/* Product image backdrop: keeps black garments from disappearing */
+/*
+ * Product photo backdrop. Photos have a white background, so `mix-blend-mode: multiply`
+ * on the image lets this tint show through (light per garment color via --stage-tint).
+ * It stays light in the night theme too: dark garments need a light stage to be seen.
+ */
 @utility product-stage {
-	background: radial-gradient(
-		ellipse at 50% 40%,
-		#26262c 0%,
-		var(--surface-raised) 55%,
-		var(--surface) 100%
-	);
+	background: var(--stage-tint, var(--stage));
 }
 
 /* Makes saving images harder (a deterrent, not real protection) */

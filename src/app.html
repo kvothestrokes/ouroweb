@@ -1,9 +1,19 @@
 <!doctype html>
-<html lang="es-MX" class="dark">
+<html lang="es-MX">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<meta name="theme-color" content="#faf7f2" />
+		<script>
+			// Night theme before the first paint, so there is no flash. Day is the default.
+			try {
+				if (localStorage.getItem('ouroboros:tema') === 'noche') {
+					document.documentElement.classList.add('dark');
+					document.querySelector('meta[name="theme-color"]').content = '#0b0a0d';
+				}
+			} catch {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

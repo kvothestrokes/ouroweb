@@ -81,7 +81,7 @@
 			</p>
 			<ExternalLink
 				href={form.placed.whatsappUrl}
-				class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-colors hover:bg-gold-light sm:w-auto"
+				class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-primary-foreground transition-colors hover:bg-primary-hover sm:w-auto"
 			>
 				<MessageCircle size={20} stroke-width={1.75} />
 				Enviar encargo por WhatsApp
@@ -141,7 +141,7 @@
 								class={cn(
 									'flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors',
 									tipo === type.id
-										? 'border-gold bg-gold/5'
+										? 'border-gold bg-gold-fill/5'
 										: 'border-border hover:border-foreground/40'
 								)}
 							>
@@ -165,7 +165,9 @@
 						<label
 							class={cn(
 								'flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors',
-								tipo === '' ? 'border-gold bg-gold/5' : 'border-border hover:border-foreground/40'
+								tipo === ''
+									? 'border-gold bg-gold-fill/5'
+									: 'border-border hover:border-foreground/40'
 							)}
 						>
 							<input
@@ -296,7 +298,7 @@
 						class={cn(
 							'flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border px-4 text-sm transition-colors',
 							metodoEntrega === method.value
-								? 'border-gold bg-gold/5'
+								? 'border-gold bg-gold-fill/5'
 								: 'border-border hover:border-foreground/40'
 						)}
 					>
@@ -384,7 +386,7 @@
 				<button
 					type="submit"
 					disabled={sending}
-					class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light disabled:opacity-50"
+					class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
 				>
 					<Sparkles size={16} stroke-width={1.75} />
 					{sending ? 'Enviando tu encargo…' : 'Enviar encargo'}

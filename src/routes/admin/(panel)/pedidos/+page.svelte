@@ -60,7 +60,7 @@
 <div aria-live="polite">
 	{#if fresh.length}
 		<div
-			class="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-gold/40 bg-gold/10 px-4 py-3 text-sm"
+			class="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-gold/40 bg-gold-fill/10 px-4 py-3 text-sm"
 		>
 			<BellRing size={18} strokeWidth={1.75} class="text-gold" aria-hidden="true" />
 			<span>Nuevo pedido: {fresh.join(', ')}</span>
@@ -151,7 +151,7 @@
 						{order.folio}
 						{#if order.estado === 'pendiente' && isNew(order.created_at)}
 							<span
-								class="ml-1 rounded bg-gold px-1.5 py-0.5 text-xs font-semibold text-primary-foreground uppercase"
+								class="ml-1 rounded bg-gold-fill px-1.5 py-0.5 text-xs font-semibold text-on-gold uppercase"
 								>Nuevo</span
 							>
 						{/if}

@@ -77,7 +77,7 @@
 				class="peer sr-only"
 			/>
 			<span
-				class="relative h-6 w-11 rounded-full bg-surface-raised transition-colors peer-checked:bg-gold peer-focus-visible:outline-2 peer-focus-visible:outline-ring after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-foreground after:transition-transform peer-checked:after:translate-x-5"
+				class="relative h-6 w-11 rounded-full bg-surface-raised transition-colors peer-checked:bg-gold-fill peer-focus-visible:outline-2 peer-focus-visible:outline-ring after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-foreground after:transition-transform peer-checked:after:translate-x-5"
 				aria-hidden="true"
 			></span>
 		</label>
@@ -247,7 +247,7 @@
 					Filtros
 					{#if activeCount}
 						<span
-							class="grid min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-semibold text-primary-foreground"
+							class="grid min-w-5 place-items-center rounded-full bg-gold-fill px-1 text-xs font-semibold text-on-gold"
 						>
 							{activeCount}
 						</span>
@@ -303,7 +303,7 @@
 			<button
 				type="submit"
 				form="filters-mobile"
-				class="min-h-11 flex-1 rounded-full bg-primary text-sm font-medium text-primary-foreground hover:bg-gold-light"
+				class="min-h-11 flex-1 rounded-full bg-primary text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 			>
 				Ver resultados
 			</button>
