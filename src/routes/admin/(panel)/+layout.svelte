@@ -1,11 +1,18 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { LogOut } from '@lucide/svelte';
 	import { NAV, isActive } from './nav.js';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
+
+	/** Keeps the active item visible in the horizontally scrolling mobile menu. */
+	function revealIfActive(active: boolean) {
+		return (node: HTMLElement) => {
+			if (active) node.scrollIntoView({ inline: 'center', block: 'nearest' });
+		};
+	}
 </script>
 
 <svelte:head>
@@ -25,6 +32,7 @@
 					<a
 						href={resolve(item.route)}
 						aria-current={active ? 'page' : undefined}
+						{@attach revealIfActive(active && orientation === 'row')}
 						class={[
 							'flex min-h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors',
 							active
@@ -39,16 +47,25 @@
 					<span
 						aria-disabled="true"
 						title="Próximamente"
-						class="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-md px-3 text-sm text-muted-foreground/50"
+						class="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-md px-3 text-sm text-muted-foreground/70"
 					>
 						<item.icon size={18} strokeWidth={1.75} />
 						{item.label}
+						<span class="sr-only">(próximamente)</span>
 					</span>
 				{/if}
 			</li>
 		{/each}
 	</ul>
 {/snippet}
+
+{#if navigating.to}
+	<div
+		role="progressbar"
+		aria-label="Cargando"
+		class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-gold"
+	></div>
+{/if}
 
 <div class="min-h-dvh bg-background md:grid md:grid-cols-[15rem_1fr]">
 	<aside class="hidden border-r border-border bg-surface md:flex md:flex-col">

@@ -259,6 +259,7 @@ export type Database = {
 					imagekit_path: string;
 					orden: number;
 					titulo: string;
+					updated_at: string;
 				};
 				Insert: {
 					collection_id?: string | null;
@@ -267,6 +268,7 @@ export type Database = {
 					imagekit_path: string;
 					orden?: number;
 					titulo?: string;
+					updated_at?: string;
 				};
 				Update: {
 					collection_id?: string | null;
@@ -275,6 +277,7 @@ export type Database = {
 					imagekit_path?: string;
 					orden?: number;
 					titulo?: string;
+					updated_at?: string;
 				};
 				Relationships: [
 					{
@@ -293,9 +296,9 @@ export type Database = {
 					color_nombre: string;
 					created_at: string;
 					es_clara: boolean;
+					foto: string;
 					garment_type_id: string;
 					id: string;
-					imagekit_path: string;
 				};
 				Insert: {
 					area_impresion: Json;
@@ -303,9 +306,9 @@ export type Database = {
 					color_nombre: string;
 					created_at?: string;
 					es_clara?: boolean;
+					foto: string;
 					garment_type_id: string;
 					id?: string;
-					imagekit_path: string;
 				};
 				Update: {
 					area_impresion?: Json;
@@ -313,9 +316,9 @@ export type Database = {
 					color_nombre?: string;
 					created_at?: string;
 					es_clara?: boolean;
+					foto?: string;
 					garment_type_id?: string;
 					id?: string;
-					imagekit_path?: string;
 				};
 				Relationships: [
 					{
@@ -768,8 +771,10 @@ export type Database = {
 					id: string;
 					modo_stock: Database['public']['Enums']['stock_mode'];
 					nombre: string;
+					oferta_hasta: string | null;
 					permite_personalizar: boolean;
 					precio_base: number | null;
+					precio_oferta: number | null;
 					slug: string;
 					tipo_imagen: Database['public']['Enums']['image_type'];
 					updated_at: string;
@@ -785,8 +790,10 @@ export type Database = {
 					id?: string;
 					modo_stock?: Database['public']['Enums']['stock_mode'];
 					nombre: string;
+					oferta_hasta?: string | null;
 					permite_personalizar?: boolean;
 					precio_base?: number | null;
+					precio_oferta?: number | null;
 					slug: string;
 					tipo_imagen: Database['public']['Enums']['image_type'];
 					updated_at?: string;
@@ -802,8 +809,10 @@ export type Database = {
 					id?: string;
 					modo_stock?: Database['public']['Enums']['stock_mode'];
 					nombre?: string;
+					oferta_hasta?: string | null;
 					permite_personalizar?: boolean;
 					precio_base?: number | null;
+					precio_oferta?: number | null;
 					slug?: string;
 					tipo_imagen?: Database['public']['Enums']['image_type'];
 					updated_at?: string;
@@ -832,6 +841,24 @@ export type Database = {
 					}
 				];
 			};
+			rate_limits: {
+				Row: {
+					hits: number;
+					key: string;
+					window_start: string;
+				};
+				Insert: {
+					hits?: number;
+					key: string;
+					window_start?: string;
+				};
+				Update: {
+					hits?: number;
+					key?: string;
+					window_start?: string;
+				};
+				Relationships: [];
+			};
 			reviews: {
 				Row: {
 					aprobada: boolean;
@@ -842,6 +869,8 @@ export type Database = {
 					order_id: string;
 					product_id: string | null;
 					texto: string;
+					tiene_foto: boolean | null;
+					updated_at: string;
 				};
 				Insert: {
 					aprobada?: boolean;
@@ -852,6 +881,8 @@ export type Database = {
 					order_id: string;
 					product_id?: string | null;
 					texto?: string;
+					tiene_foto?: boolean | null;
+					updated_at?: string;
 				};
 				Update: {
 					aprobada?: boolean;
@@ -862,6 +893,8 @@ export type Database = {
 					order_id?: string;
 					product_id?: string | null;
 					texto?: string;
+					tiene_foto?: boolean | null;
+					updated_at?: string;
 				};
 				Relationships: [
 					{
@@ -975,9 +1008,72 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
+			add_payment: {
+				Args: {
+					p_fecha?: string;
+					p_metodo: string;
+					p_monto: number;
+					p_order_id: string;
+					p_tipo: Database['public']['Enums']['payment_type'];
+				};
+				Returns: string;
+			};
+			assert_order_admin: { Args: never; Returns: undefined };
+			category_is_public: { Args: { p_category_id: string }; Returns: boolean };
+			change_order_status: {
+				Args: {
+					p_estado: Database['public']['Enums']['order_status'];
+					p_nota?: string;
+					p_order_id: string;
+				};
+				Returns: undefined;
+			};
+			create_custom_order: {
+				Args: { p_fecha?: string; p_order: Json; p_request: Json };
+				Returns: string;
+			};
+			create_order: {
+				Args: { p_fecha?: string; p_items: Json; p_order: Json };
+				Returns: string;
+			};
+			guard_new_order: {
+				Args: {
+					p_tipo?: Database['public']['Enums']['order_type'];
+					p_whatsapp: string;
+				};
+				Returns: undefined;
+			};
+			hit_rate_limit: {
+				Args: { p_key: string; p_limit: number; p_window_seconds: number };
+				Returns: boolean;
+			};
 			is_admin: { Args: never; Returns: boolean };
 			next_folio: {
 				Args: { p_fecha?: string; p_prefijo?: string };
+				Returns: string;
+			};
+			quote_order: {
+				Args: {
+					p_anticipo: number;
+					p_envio: number;
+					p_order_id: string;
+					p_personalizacion: number;
+					p_precio_final: number;
+				};
+				Returns: undefined;
+			};
+			rate_limit_exceeded: {
+				Args: { p_key: string; p_limit: number; p_window_seconds: number };
+				Returns: boolean;
+			};
+			save_product: {
+				Args: {
+					p_collections: string[];
+					p_colors: string[];
+					p_id: string;
+					p_product: Json;
+					p_stock: Json;
+				};
 				Returns: string;
 			};
 		};

@@ -4,7 +4,7 @@ import { IMAGEKIT_PRIVATE_KEY } from '$app/env/private';
 import { PUBLIC_IMAGEKIT_URL_ENDPOINT } from '$app/env/public';
 import { fixedExpiry, signUrl } from './imagekit-signing.js';
 
-/** Root folders in ImageKit (spec §5.1). `designs` and `orders` are private. */
+/** Root folders in ImageKit (spec §5.1). Everything but `bases` and `brand` is private. */
 export const FOLDERS = {
 	bases: '/ouroboros/bases',
 	designs: '/ouroboros/designs',
@@ -16,7 +16,9 @@ export const FOLDERS = {
 
 export type Folder = keyof typeof FOLDERS;
 
-const PRIVATE_FOLDERS: ReadonlySet<Folder> = new Set(['designs', 'orders']);
+// Product, review and gallery photos are private too: the store only serves them
+// watermarked through /img/*.
+const PRIVATE_FOLDERS: ReadonlySet<Folder> = new Set(['designs', 'orders', 'products', 'gallery']);
 
 const client = new ImageKit({ privateKey: IMAGEKIT_PRIVATE_KEY });
 
@@ -85,11 +87,14 @@ export function mockupUrl(options: MockupOptions): string {
  * private folders are only reachable through signed URLs. Returns the stored
  * `filePath`, which is what the database keeps (never the full URL).
  */
-export async function uploadImage(file: File, folder: Folder): Promise<string> {
+export async function uploadImage(file: File, folder: Folder, subfolder?: string): Promise<string> {
+	if (subfolder !== undefined && !/^[A-Za-z0-9-]{1,40}$/.test(subfolder)) {
+		throw new Error(`Invalid ImageKit subfolder: ${subfolder}`);
+	}
 	const result = await client.files.upload({
 		file: await toFile(file, file.name),
 		fileName: file.name,
-		folder: FOLDERS[folder],
+		folder: subfolder ? `${FOLDERS[folder]}/${subfolder}` : FOLDERS[folder],
 		useUniqueFileName: true,
 		isPrivateFile: PRIVATE_FOLDERS.has(folder)
 	});
@@ -100,4 +105,57 @@ export async function uploadImage(file: File, folder: Folder): Promise<string> {
 /** Parameters for a direct browser → ImageKit upload (admin panel, Fase 2). */
 export function uploadAuthParams() {
 	return client.helper.getAuthenticationParameters();
+}
+
+/** Downloads a stored image (private ones too) into the server; never sent to the browser as is. */
+export async function downloadImage(path: string): Promise<Buffer> {
+	const response = await fetch(signedImageUrl(path));
+	if (!response.ok) throw new Error(`ImageKit download failed (${response.status}) for ${path}`);
+	return Buffer.from(await response.arrayBuffer());
+}
+
+/**
+ * Best-effort removal of a stored file by its `filePath` (the database keeps paths, not
+ * file ids). Names are unique (`useUniqueFileName`), so folder + name finds exactly one file.
+ * Returns false when nothing was deleted; callers must not fail the user action on it.
+ */
+export async function deleteImageByPath(path: string): Promise<boolean> {
+	const slash = path.lastIndexOf('/');
+	const folder = path.slice(0, slash) || '/';
+	const name = path.slice(slash + 1);
+	if (!name || /["\\\n\r]/.test(name)) return false;
+	try {
+		const assets = await client.assets.list({
+			path: folder,
+			type: 'file',
+			searchQuery: `name = "${name}"`
+		});
+		const match = assets.find((asset) => 'filePath' in asset && asset.filePath === path);
+		if (!match || !('fileId' in match) || !match.fileId) return false;
+		await client.files.delete(match.fileId);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** Every file in one of the known folders (paginated listing of the ImageKit media library). */
+export async function listFolderFiles(
+	folder: Folder
+): Promise<{ fileId: string; filePath: string; createdAt: string }[]> {
+	const files: { fileId: string; filePath: string; createdAt: string }[] = [];
+	const limit = 100;
+	for (let skip = 0; ; skip += limit) {
+		const page = await client.assets.list({ path: FOLDERS[folder], type: 'file', limit, skip });
+		for (const asset of page) {
+			if ('fileId' in asset && asset.fileId && asset.filePath && asset.createdAt) {
+				files.push({ fileId: asset.fileId, filePath: asset.filePath, createdAt: asset.createdAt });
+			}
+		}
+		if (page.length < limit) return files;
+	}
+}
+
+export async function deleteFileById(fileId: string): Promise<void> {
+	await client.files.delete(fileId);
 }

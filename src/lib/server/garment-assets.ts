@@ -1,3 +1,5 @@
+import { slugify } from '#lib/domain/slug.js';
+
 /**
  * Base garment photos and the watermark source, bundled into the server only.
  *
@@ -25,6 +27,18 @@ function baseKey(tipo: string, color: string): string {
 
 function fromDataUrl(dataUrl: string): Buffer {
 	return Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64');
+}
+
+/** Folder name for a garment type: `Playera` → `playera`, `Sudadera Oversize` → `sudadera-oversize`. */
+export function garmentTypeSlug(nombre: string): string {
+	return slugify(nombre);
+}
+
+/** Splits a `garment_bases.foto` key ("playera/negro") into its parts. */
+export function parseFotoKey(foto: string): { tipo: string; color: string } | null {
+	const [tipo, color, ...rest] = foto.split('/');
+	if (rest.length || !tipo || !color || !SLUG.test(tipo) || !SLUG.test(color)) return null;
+	return { tipo, color };
 }
 
 /** Colors available for a garment type, from the file names, sorted. */

@@ -91,3 +91,35 @@ async function buildWatermark(source: Buffer, size: number): Promise<Buffer> {
 		.png()
 		.toBuffer();
 }
+
+/** Real product photo (mugs, candles…): resized WebP with the watermark in the bottom-right corner. */
+export async function watermarkPhoto({
+	photo,
+	watermark,
+	maxSize = 1000
+}: {
+	photo: Buffer;
+	watermark: Buffer;
+	maxSize?: number;
+}): Promise<Buffer> {
+	const rotated = await sharp(photo).rotate().toBuffer();
+	const { width, height } = await sharp(rotated).metadata();
+	if (!width || !height) throw new Error('photo has no dimensions');
+
+	const size = Math.max(1, Math.round(width * WATERMARK_SCALE));
+	const margin = Math.round(size * 0.25);
+	const composed = await sharp(rotated)
+		.composite([
+			{
+				input: await buildWatermark(watermark, size),
+				left: width - size - margin,
+				top: height - size - margin
+			}
+		])
+		.png()
+		.toBuffer();
+	return sharp(composed)
+		.resize({ width: maxSize, height: maxSize, fit: 'inside', withoutEnlargement: true })
+		.webp({ quality: 80 })
+		.toBuffer();
+}

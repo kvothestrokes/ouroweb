@@ -3,13 +3,20 @@ import {
 	type LucideIcon,
 	FolderTree,
 	House,
+	Images,
+	MessageSquareHeart,
+	MessageSquareText,
 	Layers,
 	Palette,
 	Ruler,
 	Shirt,
+	Sparkles,
 	ShoppingBag,
 	Tags
 } from '@lucide/svelte';
+
+/** Panel routes without parameters: the only ones a menu item can point to. */
+type StaticRoute = Extract<Exclude<RouteId, `${string}[${string}`>, `/admin/(panel)${string}`>;
 
 export type NavItem = {
 	/** Public path, used to highlight the active item. */
@@ -17,18 +24,62 @@ export type NavItem = {
 	label: string;
 	icon: LucideIcon;
 	/** Route id once the screen exists; pending items render as "Próximamente". */
-	route?: RouteId;
+	route?: StaticRoute;
 };
 
 export const NAV: NavItem[] = [
 	{ path: '/admin', label: 'Inicio', icon: House, route: '/admin/(panel)' },
-	{ path: '/admin/categorias', label: 'Categorías', icon: FolderTree },
-	{ path: '/admin/colecciones', label: 'Colecciones', icon: Tags },
-	{ path: '/admin/prendas-base', label: 'Prendas base', icon: Shirt },
-	{ path: '/admin/disenos', label: 'Diseños', icon: Palette },
-	{ path: '/admin/productos', label: 'Productos', icon: ShoppingBag },
-	{ path: '/admin/tipos-de-prenda', label: 'Tallas y precios', icon: Ruler },
-	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers }
+	{
+		path: '/admin/categorias',
+		label: 'Categorías',
+		icon: FolderTree,
+		route: '/admin/(panel)/categorias'
+	},
+	{
+		path: '/admin/colecciones',
+		label: 'Colecciones',
+		icon: Tags,
+		route: '/admin/(panel)/colecciones'
+	},
+	{
+		path: '/admin/prendas-base',
+		label: 'Prendas base',
+		icon: Shirt,
+		route: '/admin/(panel)/prendas-base'
+	},
+	{ path: '/admin/disenos', label: 'Diseños', icon: Palette, route: '/admin/(panel)/disenos' },
+	{
+		path: '/admin/productos',
+		label: 'Productos',
+		icon: ShoppingBag,
+		route: '/admin/(panel)/productos'
+	},
+	{
+		path: '/admin/tipos-de-prenda',
+		label: 'Tallas y precios',
+		icon: Ruler,
+		route: '/admin/(panel)/tipos-de-prenda'
+	},
+	{
+		path: '/admin/tipos-de-encargo',
+		label: 'Tipos de encargo',
+		icon: Sparkles,
+		route: '/admin/(panel)/tipos-de-encargo'
+	},
+	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers, route: '/admin/(panel)/pedidos' },
+	{
+		path: '/admin/resenas',
+		label: 'Reseñas',
+		icon: MessageSquareHeart,
+		route: '/admin/(panel)/resenas'
+	},
+	{ path: '/admin/galeria', label: 'Galería', icon: Images, route: '/admin/(panel)/galeria' },
+	{
+		path: '/admin/plantillas',
+		label: 'WhatsApp y negocio',
+		icon: MessageSquareText,
+		route: '/admin/(panel)/plantillas'
+	}
 ];
 
 export function isActive(path: string, pathname: string): boolean {

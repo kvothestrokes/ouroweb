@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { composeMockup } from './mockup.js';
+import { composeMockup, watermarkPhoto } from './mockup.js';
 
 type Rgb = [number, number, number];
 
@@ -113,5 +113,23 @@ describe('composeMockup', () => {
 			watermark: await solid(200, 200, WHITE)
 		});
 		expect((await sharp(out).metadata()).height).toBe(400);
+	});
+});
+
+describe('watermarkPhoto', () => {
+	it('resizes a photo to maxSize as WebP and stamps the watermark near the bottom', async () => {
+		const plainPhoto = await solid(2000, 1500, RED);
+		const out = await watermarkPhoto({
+			photo: plainPhoto,
+			watermark: await solid(200, 200, WHITE),
+			maxSize: 800
+		});
+		const meta = await sharp(out).metadata();
+		expect(meta.format).toBe('webp');
+		expect(meta.width).toBe(800);
+		expect(meta.height).toBe(600);
+		// 10% of 2000 px = 200 px mark, bottom-right with a 50 px margin → scaled ×0.4.
+		expect(near(await pixel(out, 800 - 20 - 40, 600 - 20 - 40), RED, 15)).toBe(false);
+		expect(near(await pixel(out, 100, 100), RED)).toBe(true);
 	});
 });
