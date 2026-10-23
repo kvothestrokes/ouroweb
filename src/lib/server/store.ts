@@ -28,7 +28,7 @@ export const publicDb = () => db;
 
 // Never select design ids or ImageKit paths here: this data goes to the browser.
 const STORE_PRODUCT_SELECT = `
-	id, slug, nombre, descripcion, category_id, tipo_imagen, precio_base, modo_stock,
+	id, slug, nombre, descripcion, category_id, tipo_imagen, precio_base, precio_oferta, oferta_hasta, modo_stock,
 	permite_personalizar, destacado, created_at, updated_at,
 	garment_types(nombre, tallas, recargos_talla, guia_tallas, precio_normal, precio_mayoreo, mayoreo_cantidad_min),
 	product_colors(garment_bases(id, color_nombre, color_hex, foto)),
@@ -65,14 +65,14 @@ export async function loadStoreProducts(): Promise<StoreProduct[]> {
 			.order('created_at', { ascending: false })
 			.order('orden', { referencedTable: 'product_images' })
 	);
-	return (rows as unknown as StoreProductRow[]).map(toStoreProduct);
+	return (rows as unknown as StoreProductRow[]).map((row) => toStoreProduct(row));
 }
 
 /** Public products (all, or by slug) with everything needed to price an order. */
 export async function loadProductDetails(slugs?: string[]): Promise<ProductDetail[]> {
 	const query = db.from('products').select(STORE_PRODUCT_SELECT);
 	const rows = unwrap(await (slugs ? query.in('slug', slugs) : query));
-	return (rows as unknown as StoreProductRow[]).map(toProductDetail);
+	return (rows as unknown as StoreProductRow[]).map((row) => toProductDetail(row));
 }
 
 export async function loadProductDetail(slug: string): Promise<ProductDetail | null> {

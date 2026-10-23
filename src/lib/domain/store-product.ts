@@ -1,7 +1,7 @@
 import type { CategoryRow } from './catalog.js';
 import type { FilterableProduct } from './catalog-filters.js';
 import type { SizeGuide } from './garment-type.js';
-import { basePrice } from './pricing.js';
+import { activeOffer, basePrice, mexicoToday } from './pricing.js';
 
 /** Shape of the public catalog query (`STORE_PRODUCT_SELECT` in `src/lib/server/store.ts`). */
 export type StoreProductRow = {
@@ -12,6 +12,9 @@ export type StoreProductRow = {
 	category_id: string;
 	tipo_imagen: 'mockup' | 'foto';
 	precio_base: number | null;
+	precio_oferta: number | null;
+	/** `YYYY-MM-DD`, inclusive. */
+	oferta_hasta: string | null;
 	modo_stock: 'stock' | 'bajo_pedido';
 	permite_personalizar: boolean;
 	destacado: boolean;
@@ -41,6 +44,8 @@ export type StoreProduct = FilterableProduct & {
 	categoryId: string;
 	tipoImagen: 'mockup' | 'foto';
 	colorOptions: ColorOption[];
+	/** Regular "desde" price while an offer runs (shown crossed out), else null. */
+	precioNormal: number | null;
 	/** Name of the first collection, shown as the fandom badge. */
 	fandom: string | null;
 	bajoPedido: boolean;
@@ -52,7 +57,10 @@ export type StoreProduct = FilterableProduct & {
 
 export type ProductDetail = StoreProduct & {
 	descripcion: string;
+	/** Unit price before size surcharge: the offer while it runs, else the regular price. */
 	precioBase: number | null;
+	/** Regular unit price while an offer runs, else null. */
+	precioNormalBase: number | null;
 	/** Surcharge in cents per size. */
 	recargos: Record<string, number>;
 	guiaTallas: SizeGuide;
@@ -89,7 +97,7 @@ function stockKey(baseId: string, size: string) {
 	return `${baseId}:${size}`;
 }
 
-export function toStoreProduct(row: StoreProductRow): StoreProduct {
+export function toStoreProduct(row: StoreProductRow, today = mexicoToday()): StoreProduct {
 	const colorOptions = row.product_colors.flatMap(({ garment_bases: base }) => {
 		const key = base && colorKey(base.foto);
 		return base && key
@@ -106,7 +114,9 @@ export function toStoreProduct(row: StoreProductRow): StoreProduct {
 		? allSizes.filter((size) => stocked.some((entry) => entry.talla === size))
 		: allSizes;
 
-	const base = basePrice(row, row.garment_types);
+	const regular = basePrice(row, row.garment_types);
+	const offer = regular === null ? null : activeOffer(row, today);
+	const base = offer ?? regular;
 	const surcharges = centsRecord(row.garment_types?.recargos_talla);
 	const lowestSurcharge = tallas.length
 		? Math.min(...tallas.map((size) => surcharges[size] ?? 0))
@@ -119,6 +129,7 @@ export function toStoreProduct(row: StoreProductRow): StoreProduct {
 		categoryId: row.category_id,
 		tipoImagen: row.tipo_imagen,
 		precio: base === null ? null : base + lowestSurcharge,
+		precioNormal: offer !== null && regular !== null ? regular + lowestSurcharge : null,
 		colores: colorOptions.map((color) => color.key),
 		colorOptions,
 		tallas,
@@ -133,13 +144,16 @@ export function toStoreProduct(row: StoreProductRow): StoreProduct {
 	};
 }
 
-export function toProductDetail(row: StoreProductRow): ProductDetail {
+export function toProductDetail(row: StoreProductRow, today = mexicoToday()): ProductDetail {
 	const type = row.garment_types;
 	const guide = type?.guia_tallas;
+	const regular = basePrice(row, type);
+	const offer = regular === null ? null : activeOffer(row, today);
 	return {
-		...toStoreProduct(row),
+		...toStoreProduct(row, today),
 		descripcion: row.descripcion,
-		precioBase: basePrice(row, type),
+		precioBase: offer ?? regular,
+		precioNormalBase: offer !== null ? regular : null,
 		recargos: centsRecord(type?.recargos_talla),
 		guiaTallas: guide && typeof guide === 'object' ? (guide as SizeGuide) : {},
 		// Only products that inherit the garment type price get its bulk price.

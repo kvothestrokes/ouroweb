@@ -59,6 +59,12 @@
 			? null
 			: product.precioBase + (talla ? (product.recargos[talla] ?? 0) : 0)
 	);
+	/** Regular price with the same size surcharge, crossed out while an offer runs. */
+	const regularPrice = $derived(
+		product.precioNormalBase === null
+			? null
+			: product.precioNormalBase + (talla ? (product.recargos[talla] ?? 0) : 0)
+	);
 	const surchargeSizes = $derived(sizes.filter((size) => product.recargos[size]));
 	const missing = $derived(
 		[
@@ -191,9 +197,22 @@
 							class="shrink-0"
 						/>
 					</div>
-					<p class="text-2xl font-semibold text-gold tabular-nums">
+					<p
+						class="flex flex-wrap items-baseline gap-x-3 text-2xl font-semibold text-gold tabular-nums"
+					>
 						{#if unitPrice !== null}
 							{formatMoney(unitPrice)}
+							{#if regularPrice !== null}
+								<s class="text-base font-normal text-muted-foreground">
+									<span class="sr-only">Antes</span>
+									{formatMoney(regularPrice)}
+								</s>
+								<span
+									class="rounded-full bg-gold px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+								>
+									Oferta
+								</span>
+							{/if}
 						{:else}
 							<span class="text-lg font-normal text-muted-foreground">Precio por cotizar</span>
 						{/if}

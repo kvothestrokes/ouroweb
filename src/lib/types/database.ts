@@ -771,8 +771,10 @@ export type Database = {
 					id: string;
 					modo_stock: Database['public']['Enums']['stock_mode'];
 					nombre: string;
+					oferta_hasta: string | null;
 					permite_personalizar: boolean;
 					precio_base: number | null;
+					precio_oferta: number | null;
 					slug: string;
 					tipo_imagen: Database['public']['Enums']['image_type'];
 					updated_at: string;
@@ -788,8 +790,10 @@ export type Database = {
 					id?: string;
 					modo_stock?: Database['public']['Enums']['stock_mode'];
 					nombre: string;
+					oferta_hasta?: string | null;
 					permite_personalizar?: boolean;
 					precio_base?: number | null;
+					precio_oferta?: number | null;
 					slug: string;
 					tipo_imagen: Database['public']['Enums']['image_type'];
 					updated_at?: string;
@@ -805,8 +809,10 @@ export type Database = {
 					id?: string;
 					modo_stock?: Database['public']['Enums']['stock_mode'];
 					nombre?: string;
+					oferta_hasta?: string | null;
 					permite_personalizar?: boolean;
 					precio_base?: number | null;
+					precio_oferta?: number | null;
 					slug?: string;
 					tipo_imagen?: Database['public']['Enums']['image_type'];
 					updated_at?: string;

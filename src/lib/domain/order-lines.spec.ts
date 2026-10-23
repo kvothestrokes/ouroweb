@@ -106,6 +106,14 @@ describe('buildOrderLines', () => {
 		expect(buildOrderLines([item()], [plain]).ok).toBe(true);
 	});
 
+	it('snapshots the offer price while it runs', () => {
+		const onSale = toProductDetail(row({ precio_oferta: 14000, oferta_hasta: null }));
+		const result = buildOrderLines([item({ cantidad: 6 })], [onSale]);
+		expect(result.ok && result.value.items[0].precio_unitario).toBe(14000);
+		// The offer is already below the bulk price, so no bulk discount on top.
+		expect(result.ok && result.value.descMayoreo).toBe(0);
+	});
+
 	it('rejects products without a price', () => {
 		const noPrice = toProductDetail(
 			row({ garment_types: null, product_colors: [], precio_base: null })

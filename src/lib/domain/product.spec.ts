@@ -10,7 +10,7 @@ const SUDADERA_NEGRA = '66666666-6666-4666-8666-666666666666';
 const COLLECTION = '77777777-7777-4777-8777-777777777777';
 
 const context = {
-	garmentTypes: [{ id: PLAYERA, tallas: ['CH', 'M', 'G'] }],
+	garmentTypes: [{ id: PLAYERA, tallas: ['CH', 'M', 'G'], precio_normal: 17000 }],
 	bases: [
 		{ id: NEGRO, garment_type_id: PLAYERA },
 		{ id: BLANCO, garment_type_id: PLAYERA },
@@ -55,6 +55,8 @@ describe('productFromForm', () => {
 					garment_type_id: PLAYERA,
 					design_id: DESIGN,
 					precio_base: null,
+					precio_oferta: null,
+					oferta_hasta: null,
 					modo_stock: 'bajo_pedido',
 					permite_personalizar: false,
 					activo: true,
@@ -108,6 +110,8 @@ describe('productFromForm', () => {
 				garment_type_id: null,
 				design_id: null,
 				precio_base: 18000,
+				precio_oferta: null,
+				oferta_hasta: null,
 				permite_personalizar: true
 			},
 			colors: []
@@ -144,6 +148,34 @@ describe('productFromForm', () => {
 		).toBe('El inventario por color y talla solo aplica a prendas; usa «Bajo pedido».');
 		expect(message({ modo_stock: 'stock', [`stock.${NEGRO}.M`]: '-1' })).toBe(
 			'Revisa las cantidades del inventario.'
+		);
+	});
+
+	it('reads an offer price with an optional end date', () => {
+		const result = productFromForm(
+			form({ ...mockup, precio_oferta: '140', oferta_hasta: '2026-10-31' }),
+			context
+		);
+		expect(result.ok && result.value.product).toMatchObject({
+			precio_oferta: 14000,
+			oferta_hasta: '2026-10-31'
+		});
+	});
+
+	it('rejects an offer that is not below the regular price or a date without offer', () => {
+		const message = (values: Record<string, string>) => {
+			const result = productFromForm(form({ ...mockup, ...values }), context);
+			return result.ok ? null : result.message;
+		};
+		expect(message({ precio_oferta: '170' })).toBe(
+			'La oferta debe ser menor que el precio normal ($170.00).'
+		);
+		expect(message({ precio: '200', precio_oferta: '190' })).toBeNull();
+		expect(message({ oferta_hasta: '2026-10-31' })).toBe(
+			'Escribe el precio de oferta o quita la fecha.'
+		);
+		expect(message({ precio_oferta: '140', oferta_hasta: '31/10/2026' })).toBe(
+			'Revisa la fecha de fin de la oferta.'
 		);
 	});
 });

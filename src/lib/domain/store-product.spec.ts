@@ -154,3 +154,26 @@ describe('findCategory', () => {
 		expect(findCategory(tree, 'velas')).toBeNull();
 	});
 });
+
+describe('offer price', () => {
+	const offer = { precio_oferta: 14000, oferta_hasta: '2026-10-31' };
+
+	it('shows the offer next to the regular price while it lasts', () => {
+		const product = toStoreProduct(row(offer), '2026-10-22');
+		expect(product.precio).toBe(14000);
+		expect(product.precioNormal).toBe(17000);
+		expect(toStoreProduct(row(offer), '2026-11-01')).toMatchObject({
+			precio: 17000,
+			precioNormal: null
+		});
+	});
+
+	it('prices orders at the offer, keeping the bulk price when it is lower', () => {
+		const detail = toProductDetail(row(offer), '2026-10-22');
+		expect(detail.precioBase).toBe(14000);
+		expect(detail.precioNormalBase).toBe(17000);
+		const cheap = toProductDetail(row({ precio_oferta: 16000, oferta_hasta: null }), '2026-10-22');
+		expect(cheap.precioBase).toBe(16000);
+		expect(cheap.mayoreo).toEqual({ precio: 15000, cantidadMin: 6 });
+	});
+});

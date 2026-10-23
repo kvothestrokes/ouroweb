@@ -330,6 +330,34 @@
 			<p class="text-xs text-muted-foreground">{inheritedPrice}</p>
 		</div>
 
+		<div class="mt-4 grid max-w-md gap-4 sm:grid-cols-2">
+			<div class="flex flex-col gap-2">
+				<Label for="pf-oferta">Precio de oferta (MXN)</Label>
+				<Input
+					id="pf-oferta"
+					name="precio_oferta"
+					inputmode="decimal"
+					placeholder="Sin oferta"
+					value={centsToInput(initial.precio_oferta ?? null)}
+					class="min-h-11 tabular-nums"
+				/>
+			</div>
+			<div class="flex flex-col gap-2">
+				<Label for="pf-oferta-hasta">Oferta hasta (opcional)</Label>
+				<Input
+					id="pf-oferta-hasta"
+					name="oferta_hasta"
+					type="date"
+					value={initial.oferta_hasta ?? ''}
+					class="min-h-11 [color-scheme:dark]"
+				/>
+			</div>
+			<p class="text-xs text-muted-foreground sm:col-span-2">
+				La tienda muestra la oferta con el precio normal tachado. Si el precio de mayoreo es más
+				bajo, se cobra el de mayoreo. Sin fecha, la oferta sigue hasta que la quites.
+			</p>
+		</div>
+
 		<fieldset class="mt-5 flex flex-col gap-1 sm:flex-row sm:gap-6">
 			<legend class="text-sm font-medium text-foreground">Disponibilidad</legend>
 			<label class="flex min-h-11 items-center gap-2 text-sm text-foreground">

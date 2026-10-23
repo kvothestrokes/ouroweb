@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { SLUG_MESSAGE, type FormResult } from './catalog.js';
-import { parseMoney } from './money.js';
+import { formatMoney, parseMoney } from './money.js';
 import { isSlug, slugify } from './slug.js';
 
 export type ProductRecord = {
@@ -13,6 +13,10 @@ export type ProductRecord = {
 	design_id: string | null;
 	/** Cents; null inherits the garment type price. */
 	precio_base: number | null;
+	/** Cents; null = no offer. */
+	precio_oferta: number | null;
+	/** `YYYY-MM-DD` (inclusive); null = no end. */
+	oferta_hasta: string | null;
 	modo_stock: 'stock' | 'bajo_pedido';
 	permite_personalizar: boolean;
 	activo: boolean;
@@ -30,7 +34,7 @@ export type ProductInput = {
 };
 
 export type ProductContext = {
-	garmentTypes: { id: string; tallas: string[] }[];
+	garmentTypes: { id: string; tallas: string[]; precio_normal: number | null }[];
 	bases: { id: string; garment_type_id: string }[];
 };
 
@@ -109,6 +113,26 @@ export function productFromForm(form: FormData, context: ProductContext): FormRe
 		return { ok: false, message: 'Escribe el precio: este producto no es una prenda.' };
 	}
 
+	const precio_oferta = parseMoney(form.get('precio_oferta'));
+	if (Number.isNaN(precio_oferta)) return { ok: false, message: 'Revisa el precio de oferta.' };
+	const regular = precio_base ?? garmentType?.precio_normal ?? null;
+	if (precio_oferta !== null && regular !== null && precio_oferta >= regular) {
+		return {
+			ok: false,
+			message: `La oferta debe ser menor que el precio normal (${formatMoney(regular)}).`
+		};
+	}
+	const oferta_hasta = text(form, 'oferta_hasta') || null;
+	if (oferta_hasta && precio_oferta === null) {
+		return { ok: false, message: 'Escribe el precio de oferta o quita la fecha.' };
+	}
+	if (
+		oferta_hasta &&
+		(!/^\d{4}-\d{2}-\d{2}$/.test(oferta_hasta) || Number.isNaN(Date.parse(oferta_hasta)))
+	) {
+		return { ok: false, message: 'Revisa la fecha de fin de la oferta.' };
+	}
+
 	const modo_stock = text(form, 'modo_stock') === 'stock' ? 'stock' : 'bajo_pedido';
 	const stock: StockEntry[] = [];
 	if (modo_stock === 'stock') {
@@ -140,6 +164,8 @@ export function productFromForm(form: FormData, context: ProductContext): FormRe
 				garment_type_id: garmentType?.id ?? null,
 				design_id: tipo === 'mockup' ? designId : null,
 				precio_base,
+				precio_oferta,
+				oferta_hasta,
 				modo_stock,
 				permite_personalizar: form.get('permite_personalizar') === 'on',
 				activo: form.get('activo') === 'on',

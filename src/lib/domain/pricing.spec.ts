@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { basePrice, quoteLines, type QuoteLine } from './pricing.js';
+import { activeOffer, basePrice, quoteLines, type QuoteLine } from './pricing.js';
 
 describe('basePrice', () => {
 	it('uses the product price when it has one', () => {
@@ -42,5 +42,18 @@ describe('quoteLines', () => {
 	it('does not apply the bulk price one piece below the minimum or without a minimum', () => {
 		expect(quoteLines([playera({ cantidad: 5 })]).descMayoreo).toBe(0);
 		expect(quoteLines([playera({ cantidad: 10, mayoreo: null })]).descMayoreo).toBe(0);
+	});
+});
+
+describe('activeOffer', () => {
+	it('applies the offer until its end date (inclusive) or forever without one', () => {
+		expect(activeOffer({ precio_oferta: 14000, oferta_hasta: '2026-10-31' }, '2026-10-31')).toBe(
+			14000
+		);
+		expect(
+			activeOffer({ precio_oferta: 14000, oferta_hasta: '2026-10-31' }, '2026-11-01')
+		).toBeNull();
+		expect(activeOffer({ precio_oferta: 14000, oferta_hasta: null }, '2030-01-01')).toBe(14000);
+		expect(activeOffer({ precio_oferta: null, oferta_hasta: null }, '2026-10-22')).toBeNull();
 	});
 });

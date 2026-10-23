@@ -86,7 +86,7 @@ export async function loadProduct(db: Db, id: string) {
 		.from('products')
 		.select(
 			`id, nombre, slug, descripcion, category_id, tipo_imagen, garment_type_id, design_id,
-			precio_base, modo_stock, permite_personalizar, activo, destacado,
+			precio_base, precio_oferta, oferta_hasta, modo_stock, permite_personalizar, activo, destacado,
 			product_colors(garment_base_id),
 			product_collections(collection_id),
 			product_stock(garment_base_id, talla, cantidad),

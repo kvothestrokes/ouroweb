@@ -44,3 +44,19 @@ export function quoteLines(lines: QuoteLine[]): Quote {
 
 	return { importes, subtotal: importes.reduce((a, b) => a + b, 0), descMayoreo };
 }
+
+/** `YYYY-MM-DD` in Mexico City: offers end at the end of their day there. */
+export function mexicoToday(now = new Date()): string {
+	return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(now);
+}
+
+/** The product's offer price when it applies today, else null (no end date = no end). */
+export function activeOffer(
+	product: { precio_oferta: number | null; oferta_hasta: string | null },
+	today: string
+): number | null {
+	if (product.precio_oferta === null) return null;
+	return product.oferta_hasta === null || today <= product.oferta_hasta
+		? product.precio_oferta
+		: null;
+}

@@ -374,6 +374,29 @@ for (const table of PRIVATE_TABLES) {
 			JSON.stringify(created)
 		);
 
+		const { error: offerError } = await admin.rpc('save_product', {
+			p_id: id,
+			p_product: { ...product, precio_oferta: 14000, oferta_hasta: '2099-12-31' },
+			p_colors: [negro?.id, blanco?.id],
+			p_collections: [collection?.id],
+			p_stock: []
+		});
+		const { data: offer } = await admin
+			.from('products')
+			.select('precio_oferta, oferta_hasta')
+			.eq('id', id)
+			.single();
+		check(
+			'save_product stores the offer price and its end date',
+			!offerError && offer?.precio_oferta === 14000 && offer.oferta_hasta === '2099-12-31',
+			offerError?.message ?? JSON.stringify(offer)
+		);
+		const { error: anonOffer } = await anon
+			.from('products')
+			.select('precio_oferta, oferta_hasta')
+			.limit(1);
+		check('anon reads the offer columns', !anonOffer, anonOffer?.message);
+
 		const { error: updateError } = await admin.rpc('save_product', {
 			p_id: id,
 			p_product: { ...product, nombre: 'Smoke producto 2', modo_stock: 'bajo_pedido' },

@@ -20,6 +20,8 @@ export function row(overrides: Partial<StoreProductRow> = {}): StoreProductRow {
 		category_id: 'c1',
 		tipo_imagen: 'mockup',
 		precio_base: null,
+		precio_oferta: null,
+		oferta_hasta: null,
 		modo_stock: 'bajo_pedido',
 		permite_personalizar: true,
 		destacado: false,

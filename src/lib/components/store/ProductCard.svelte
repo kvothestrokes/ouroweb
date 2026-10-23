@@ -78,11 +78,24 @@
 			{#if product.precio !== null}
 				<span class="text-muted-foreground">Desde</span>
 				<span class="font-semibold text-gold tabular-nums">{formatMoney(product.precio)}</span>
+				{#if product.precioNormal !== null}
+					<s class="text-xs text-muted-foreground tabular-nums">
+						<span class="sr-only">antes</span>
+						{formatMoney(product.precioNormal)}
+					</s>
+				{/if}
 			{:else}
 				<span class="text-muted-foreground">Precio por cotizar</span>
 			{/if}
 		</p>
 		<div class="flex flex-wrap items-center gap-1.5">
+			{#if product.precioNormal !== null}
+				<span
+					class="rounded-full bg-gold px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+				>
+					Oferta
+				</span>
+			{/if}
 			<StockBadge enStock={product.enStock} />
 			{#if product.fandom}
 				<FandomBadge nombre={product.fandom} />
