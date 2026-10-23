@@ -1,11 +1,12 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
 	import { resolve } from '$app/paths';
 	import CatalogFilters from '#lib/components/store/CatalogFilters.svelte';
 	import CategoryHero from '#lib/components/store/CategoryHero.svelte';
 	import CategorySubnav from '#lib/components/store/CategorySubnav.svelte';
 	import EmptyState from '#lib/components/store/EmptyState.svelte';
 	import ProductGrid from '#lib/components/store/ProductGrid.svelte';
-	import { productImages } from '#lib/domain/store-product.js';
+	import { imageUrl, productImages } from '#lib/domain/store-product.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -14,16 +15,17 @@
 	const starImage = $derived(
 		data.star?.product ? (productImages(data.star.product)[0] ?? null) : null
 	);
+	const shareImage = $derived(
+		starImage ?? (data.products[0] ? (productImages(data.products[0])[0] ?? null) : null)
+	);
 </script>
 
-<svelte:head>
-	<title>{data.category.nombre} — Ouroboros</title>
-	<meta
-		name="description"
-		content="{data.category
-			.nombre} con diseños de anime y cultura pop. Pide por WhatsApp en Ouroboros."
-	/>
-</svelte:head>
+<Seo
+	title="{data.category.nombre} — Ouroboros"
+	description="{data.category
+		.nombre} con diseños de anime y cultura pop. Pide por WhatsApp en Ouroboros."
+	image={shareImage ? imageUrl(shareImage, 1000) : null}
+/>
 
 {#if data.root.children.length}
 	<CategorySubnav parent={data.root} items={data.root.children} active={data.category.slug} />

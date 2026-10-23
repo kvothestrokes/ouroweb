@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
+	import { imageUrl, productImages } from '#lib/domain/store-product.js';
 	import ExternalLink from '#lib/components/store/ExternalLink.svelte';
 	import { resolve } from '$app/paths';
 	import { PUBLIC_WHATSAPP_NUMBER } from '$app/env/public';
@@ -12,13 +14,11 @@
 	let { data }: PageProps = $props();
 </script>
 
-<svelte:head>
-	<title>Ouroboros — Playeras y regalos de anime y cultura pop</title>
-	<meta
-		name="description"
-		content="Playeras, sudaderas, tazas, termos, stickers, velas e impresiones 3D con diseños de anime y cultura pop. Pide por WhatsApp."
-	/>
-</svelte:head>
+<Seo
+	title="Ouroboros — Playeras y regalos de anime y cultura pop"
+	description="Playeras, sudaderas, tazas, termos, stickers, velas e impresiones 3D con diseños de anime y cultura pop. Pide por WhatsApp."
+	image={data.featured[0] ? imageUrl(productImages(data.featured[0])[0], 1000) : null}
+/>
 
 <!-- Hero -->
 <section class="relative isolate overflow-hidden border-b border-border">

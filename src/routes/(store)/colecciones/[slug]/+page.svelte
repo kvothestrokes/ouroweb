@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
+	import { imageUrl, productImages } from '#lib/domain/store-product.js';
 	import { resolve } from '$app/paths';
 	import CatalogFilters from '#lib/components/store/CatalogFilters.svelte';
 	import EmptyState from '#lib/components/store/EmptyState.svelte';
@@ -8,14 +10,14 @@
 	let { data }: PageProps = $props();
 </script>
 
-<svelte:head>
-	<title>{data.collection.nombre} — Colecciones — Ouroboros</title>
-	<meta
-		name="description"
-		content="Playeras, sudaderas y regalos de {data.collection
-			.nombre}. Pide por WhatsApp en Ouroboros."
-	/>
-</svelte:head>
+<Seo
+	title="{data.collection.nombre} — Colecciones — Ouroboros"
+	description="Playeras, sudaderas y regalos de {data.collection
+		.nombre}. Pide por WhatsApp en Ouroboros."
+	image={data.products[0] && productImages(data.products[0])[0]
+		? imageUrl(productImages(data.products[0])[0], 1000)
+		: null}
+/>
 
 <div class="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-6 md:py-10">
 	<header class="flex flex-col gap-1">

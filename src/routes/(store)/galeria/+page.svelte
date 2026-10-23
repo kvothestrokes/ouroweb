@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
 	import { resolve } from '$app/paths';
 	import EmptyState from '#lib/components/store/EmptyState.svelte';
 	import ReviewList from '#lib/components/store/ReviewList.svelte';
@@ -15,13 +16,11 @@
 		'inline-flex min-h-11 items-center rounded-full border px-4 text-sm whitespace-nowrap transition-colors';
 </script>
 
-<svelte:head>
-	<title>Galería de trabajos — Ouroboros</title>
-	<meta
-		name="description"
-		content="Trabajos que hemos hecho para nuestros clientes y lo que opinan de ellos."
-	/>
-</svelte:head>
+<Seo
+	title="Galería de trabajos — Ouroboros"
+	description="Trabajos que hemos hecho para nuestros clientes y lo que opinan de ellos."
+	image={data.items[0]?.src ?? null}
+/>
 
 <div class="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-8 md:px-6 md:py-10">
 	<header>

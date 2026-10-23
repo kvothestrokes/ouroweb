@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
 	import { resolve } from '$app/paths';
 	import EmptyState from '#lib/components/store/EmptyState.svelte';
 	import ProtectedImage from '#lib/components/store/ProtectedImage.svelte';
@@ -10,10 +11,10 @@
 	const visible = $derived(data.collections.filter((collection) => collection.count > 0));
 </script>
 
-<svelte:head>
-	<title>Colecciones por fandom — Ouroboros</title>
-	<meta name="description" content="Encuentra tus diseños por anime, videojuego o película." />
-</svelte:head>
+<Seo
+	title="Colecciones por fandom — Ouroboros"
+	description="Encuentra tus diseños por anime, videojuego o película."
+/>
 
 <div class="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-6 md:py-10">
 	<header>

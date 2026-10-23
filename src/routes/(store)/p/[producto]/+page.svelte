@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Check from '@lucide/svelte/icons/check';
@@ -14,7 +15,7 @@
 	import SizeGuide from '#lib/components/store/SizeGuide.svelte';
 	import StockBadge from '#lib/components/store/StockBadge.svelte';
 	import { formatMoney } from '#lib/domain/money.js';
-	import { availableSizes, productImages } from '#lib/domain/store-product.js';
+	import { availableSizes, imageUrl, productImages } from '#lib/domain/store-product.js';
 	import { MAX_QUANTITY, cart } from '#lib/stores/cart.svelte.js';
 	import { cn } from '#lib/utils.js';
 	import type { PageProps } from './$types';
@@ -105,10 +106,12 @@
 	);
 </script>
 
-<svelte:head>
-	<title>{product.nombre} — Ouroboros</title>
-	<meta name="description" content={description.slice(0, 160)} />
-</svelte:head>
+<Seo
+	title="{product.nombre} — Ouroboros"
+	{description}
+	type="product"
+	image={images[0] ? imageUrl(images[0], 1000) : null}
+/>
 
 <div class="mx-auto max-w-7xl px-4 pt-6 pb-32 md:px-6 md:pt-10 lg:pb-10">
 	<nav aria-label="Ruta" class="mb-6 text-sm text-muted-foreground">

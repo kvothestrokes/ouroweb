@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Seo from '#lib/components/store/Seo.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
@@ -59,13 +60,10 @@
 	const label = 'flex flex-col gap-1.5 text-sm';
 </script>
 
-<svelte:head>
-	<title>Encargos especiales — Ouroboros</title>
-	<meta
-		name="description"
-		content="Cuéntanos tu idea: grabado láser, sublimación, vinil, velas o impresión 3D. Te cotizamos por WhatsApp."
-	/>
-</svelte:head>
+<Seo
+	title="Encargos especiales — Ouroboros"
+	description="Cuéntanos tu idea: grabado láser, sublimación, vinil, velas o impresión 3D. Te cotizamos por WhatsApp."
+/>
 
 <div class="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
 	{#if form?.placed}

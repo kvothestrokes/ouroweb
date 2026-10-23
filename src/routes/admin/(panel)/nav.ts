@@ -16,7 +16,7 @@ import {
 } from '@lucide/svelte';
 
 /** Panel routes without parameters: the only ones a menu item can point to. */
-type StaticRoute = Exclude<RouteId, `${string}[${string}`>;
+type StaticRoute = Extract<Exclude<RouteId, `${string}[${string}`>, `/admin/(panel)${string}`>;
 
 export type NavItem = {
 	/** Public path, used to highlight the active item. */
