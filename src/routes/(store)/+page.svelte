@@ -41,7 +41,8 @@
 	// Category tiles cycle through brand surfaces; the first one shows a product photo.
 	const TILE_STYLES = [
 		'bg-gold-fill text-on-gold',
-		'bg-primary text-primary-foreground',
+		// Always ink: `dark` scopes the night tokens to this tile.
+		'dark border border-border bg-surface text-foreground',
 		'bg-accent/15 text-foreground',
 		'bg-surface-raised text-foreground'
 	];
@@ -120,9 +121,9 @@
 			{/each}
 			{#if firstHero?.product.precio != null}
 				<div
-					class="absolute bottom-[14%] left-[38%] z-10 flex flex-col rounded-2xl bg-overlay px-4 py-3 text-overlay-foreground shadow-2xl"
+					class="absolute bottom-[14%] left-[38%] z-10 flex max-w-[55%] flex-col rounded-2xl bg-overlay px-4 py-3 text-overlay-foreground shadow-2xl"
 				>
-					<span class="text-xs opacity-70">{firstHero.product.nombre}</span>
+					<span class="truncate text-xs opacity-70">{firstHero.product.nombre}</span>
 					<span class="text-base font-bold tabular-nums">
 						{formatMoney(firstHero.product.precio)}
 						{#if firstHero.product.precioNormal}
@@ -148,7 +149,7 @@
 			class="absolute top-4 right-[40%] grid size-20 rotate-[-12deg] place-items-center rounded-full bg-gold-fill text-center font-display text-sm leading-tight font-bold text-on-gold shadow-lg"
 			aria-hidden="true"
 		>
-			Nuevo<br />drop
+			Recién<br />llegado
 		</span>
 	</div>
 </section>
@@ -242,7 +243,10 @@
 							<span class="absolute inset-0 product-stage"></span>
 						{/if}
 						<span class="relative mt-auto flex flex-col items-start gap-3">
-							<span class="font-display text-4xl font-bold md:text-5xl">{category.nombre}</span>
+							<span
+								class="rounded-2xl bg-overlay/90 px-4 py-2 font-display text-3xl font-bold md:text-5xl"
+								>{category.nombre}</span
+							>
 							<span
 								class="inline-flex items-center gap-1 rounded-full bg-overlay-foreground px-4 py-2 text-sm font-semibold text-overlay"
 							>
@@ -329,8 +333,9 @@
 <!-- Featured collection -->
 {#if data.spotlight}
 	<section class="mx-auto max-w-7xl px-4 pb-20 md:px-6">
+		<!-- Always ink: `dark` scopes the night tokens to the banner. -->
 		<div
-			class="grid overflow-hidden rounded-[32px] bg-primary text-primary-foreground md:min-h-[420px] md:grid-cols-2"
+			class="dark grid overflow-hidden rounded-[32px] border border-border bg-surface text-foreground md:min-h-[420px] md:grid-cols-2"
 		>
 			<div class="flex flex-col justify-center gap-4 p-8 md:p-14">
 				<span class="text-xs font-semibold tracking-[0.2em] text-gold-fill uppercase"
@@ -411,7 +416,7 @@
 		class="grid gap-8 rounded-[32px] bg-surface-raised p-7 md:p-12 lg:grid-cols-[1fr_2fr] lg:items-center"
 	>
 		<div class="flex flex-col items-start gap-4">
-			<span class="text-xs font-semibold tracking-[0.2em] text-gold uppercase"
+			<span class="text-xs font-semibold tracking-[0.2em] text-foreground uppercase"
 				>Encargos especiales</span
 			>
 			<h2 class="font-display text-3xl leading-tight font-bold md:text-4xl">

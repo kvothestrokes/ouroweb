@@ -48,9 +48,9 @@
 	class="flex h-9 items-center justify-center gap-6 bg-primary px-4 text-[11px] font-medium tracking-[0.12em] text-primary-foreground uppercase"
 >
 	<span>Pedidos por WhatsApp</span>
-	<span class="hidden text-gold-fill sm:inline" aria-hidden="true">✦</span>
+	<span class="hidden opacity-60 sm:inline" aria-hidden="true">✦</span>
 	<span class="hidden sm:inline">Personalizamos tu diseño</span>
-	<span class="hidden text-gold-fill md:inline" aria-hidden="true">✦</span>
+	<span class="hidden opacity-60 md:inline" aria-hidden="true">✦</span>
 	<span class="hidden md:inline">Envíos a todo México</span>
 </div>
 
@@ -174,7 +174,7 @@
 				<span class="hidden sm:inline">Carrito</span>
 				{#if cart.count}
 					<span
-						class="grid min-w-5 place-items-center rounded-full bg-gold-fill px-1 text-[11px] leading-5 font-bold text-on-gold tabular-nums"
+						class="grid min-w-5 place-items-center rounded-full bg-background px-1 text-[11px] leading-5 font-bold text-foreground tabular-nums"
 						aria-hidden="true"
 					>
 						{cart.count > 99 ? '99+' : cart.count}
@@ -263,6 +263,7 @@
 		</button>
 		<a
 			href={resolve('/(store)/favoritos')}
+			aria-label="Favoritos{favorites.slugs.length ? ` (${favorites.slugs.length})` : ''}"
 			class="relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground"
 		>
 			<Heart size={22} stroke-width={1.75} />

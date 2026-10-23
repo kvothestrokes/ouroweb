@@ -52,6 +52,15 @@
 	let sheetOpen = $state(false);
 	let addedSize = $state<string | null>(null);
 
+	/** Escape closes the sizes while focus is inside them. */
+	function closeOnEscape(node: HTMLElement) {
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') sheetOpen = false;
+		};
+		node.addEventListener('keydown', onKey);
+		return () => node.removeEventListener('keydown', onKey);
+	}
+
 	function add(size: string) {
 		cart.add({ slug: product.slug, color, talla: size, cantidad: 1, personalizacion: null });
 		addedSize = size;
@@ -94,9 +103,7 @@
 
 		<div class="pointer-events-none absolute top-2.5 left-2.5 flex flex-col items-start gap-1">
 			{#if discount > 0}
-				<span
-					class="rounded-full bg-sale px-2.5 py-1 text-[11px] font-bold text-overlay dark:text-overlay-foreground"
-				>
+				<span class="rounded-full bg-sale px-2.5 py-1 text-[11px] font-bold text-on-sale">
 					−{discount}%
 				</span>
 			{:else if isNew}
@@ -115,37 +122,52 @@
 		/>
 
 		{#if quickAdd}
-			<button
-				type="button"
-				onclick={() => (sheetOpen = !sheetOpen)}
-				aria-expanded={sheetOpen}
-				aria-label={sheetOpen ? 'Cerrar tallas' : `Agregar ${product.nombre} rápido`}
-				class="absolute right-2 bottom-2 grid size-11 place-items-center rounded-full bg-overlay text-overlay-foreground shadow-md transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-			>
-				{#if sheetOpen}<X size={18} stroke-width={2} />{:else}<Plus
-						size={18}
-						stroke-width={2}
-					/>{/if}
-			</button>
+			{#if !sheetOpen}
+				<!-- On devices that hover, the sizes show on hover; elsewhere this button opens them. -->
+				<button
+					type="button"
+					onclick={() => (sheetOpen = true)}
+					aria-expanded="false"
+					aria-label={`Agregar ${product.nombre} rápido`}
+					class="absolute right-2 bottom-2 grid size-11 place-items-center rounded-full bg-overlay text-overlay-foreground shadow-md transition-opacity focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+				>
+					<Plus size={18} stroke-width={2} />
+				</button>
+			{/if}
 			<div
 				class={cn(
 					'absolute inset-x-2 bottom-2 rounded-xl bg-overlay/95 p-2.5 text-overlay-foreground shadow-lg backdrop-blur-sm transition-all duration-200',
 					sheetOpen
 						? 'visible translate-y-0 opacity-100'
-						: 'invisible translate-y-2 opacity-0 md:group-focus-within:visible md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 md:group-hover:visible md:group-hover:translate-y-0 md:group-hover:opacity-100'
+						: 'invisible translate-y-2 opacity-0 [@media(hover:hover)]:group-hover:visible [@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100'
 				)}
+				role="group"
+				aria-label="Tallas de {product.nombre}"
+				{@attach closeOnEscape}
 			>
-				<p class="mb-2 text-xs font-semibold" aria-live="polite">
-					{addedSize ? `Agregada en ${addedSize}` : 'Agregar rápido · elige talla'}
-				</p>
-				<div class="flex gap-1.5">
+				<div class="mb-1.5 flex items-center justify-between gap-2">
+					<p class="text-xs font-semibold" aria-live="polite">
+						{addedSize ? `Talla ${addedSize} agregada` : 'Agregar rápido · elige talla'}
+					</p>
+					{#if sheetOpen}
+						<button
+							type="button"
+							onclick={() => (sheetOpen = false)}
+							aria-label="Cerrar tallas"
+							class="-my-2 -mr-1.5 grid size-11 place-items-center rounded-full"
+						>
+							<X size={16} stroke-width={2} />
+						</button>
+					{/if}
+				</div>
+				<div class="flex flex-wrap gap-1.5">
 					{#each product.tallas as size (size)}
 						<button
 							type="button"
 							onclick={() => add(size)}
 							aria-label="Agregar talla {size} al carrito"
 							class={cn(
-								'flex min-h-10 flex-1 items-center justify-center rounded-lg border text-xs font-medium transition-colors',
+								'flex min-h-11 min-w-11 flex-1 items-center justify-center rounded-lg border text-xs font-medium transition-colors',
 								addedSize === size
 									? 'border-transparent bg-overlay-foreground text-overlay'
 									: 'border-overlay-line hover:border-overlay-foreground hover:bg-overlay-foreground hover:text-overlay'

@@ -21,7 +21,7 @@
 	color-scheme: light;
 
 	/* Brand */
-	--gold: #8a6a12;
+	--gold: #7a5c0c;
 	--gold-fill: #d4af37;
 	--on-gold: #17141c;
 	/* Light chips over photos (same in both themes: photos sit on a light stage) */
@@ -32,6 +32,7 @@
 	--purple: #6d28d9;
 	--purple-light: #6d28d9;
 	--sale: #c2410c;
+	--on-sale: #ffffff;
 
 	/* Surfaces and text */
 	--bg: #faf7f2;
@@ -94,6 +95,7 @@
 	--gold-light: #f2d27a;
 	--purple-light: #a78bfa;
 	--sale: #fb923c;
+	--on-sale: #17141c;
 
 	--bg: #0b0a0d;
 	--surface: #15131a;
@@ -150,6 +152,7 @@
 	--color-overlay-foreground: var(--overlay-foreground);
 	--color-overlay-line: var(--overlay-line);
 	--color-sale: var(--sale);
+	--color-on-sale: var(--on-sale);
 	--color-stage: var(--stage);
 	--color-primary-hover: var(--primary-hover);
 	--color-gold-light: var(--gold-light);

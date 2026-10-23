@@ -253,7 +253,7 @@
 									<span class="sr-only">Antes</span>
 									{formatMoney(regularPrice)}
 								</s>
-								<span class="rounded-full bg-sale px-2.5 py-1 text-xs font-bold text-overlay"
+								<span class="rounded-full bg-sale px-2.5 py-1 text-xs font-bold text-on-sale"
 									>Oferta −{Math.round((1 - unitPrice / regularPrice) * 100)}%</span
 								>
 							{/if}
@@ -344,7 +344,12 @@
 								>
 									{size}
 									{#if available && product.recargos[size]}
-										<span class="text-[11px] text-muted-foreground tabular-nums">
+										<span
+											class={cn(
+												'text-[11px] tabular-nums',
+												talla === size ? 'text-primary-foreground/80' : 'text-muted-foreground'
+											)}
+										>
 											+{formatMoney(product.recargos[size])}
 										</span>
 									{/if}
@@ -412,7 +417,7 @@
 										product.mayoreo.precio
 									)} c/u.
 								{:else}
-									<strong class="text-success">¡Precio de mayoreo!</strong>
+									<strong>¡Precio de mayoreo!</strong>
 									{formatMoney(product.mayoreo.precio)} c/u al confirmar tu pedido.
 								{/if}
 							</p>

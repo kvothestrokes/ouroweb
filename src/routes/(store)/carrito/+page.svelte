@@ -73,7 +73,7 @@
 							<div class="flex items-start justify-between gap-3">
 								<a
 									href={resolve('/(store)/p/[producto]', { producto: row.line.slug })}
-									class="line-clamp-2 text-sm font-medium hover:text-gold-light"
+									class="line-clamp-2 text-sm font-medium hover:text-purple-light"
 								>
 									{row.product?.nombre ?? 'Producto no disponible'}
 								</a>
