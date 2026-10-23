@@ -22,7 +22,7 @@
 	<div class="mt-2 flex flex-wrap justify-center gap-3">
 		<a
 			href={resolve('/(store)')}
-			class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-gold-light"
+			class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 		>
 			Ir al inicio
 		</a>

@@ -24,14 +24,14 @@
 	class={cn(
 		'grid size-11 place-items-center rounded-full transition-colors',
 		variant === 'floating'
-			? 'bg-background/60 backdrop-blur-sm hover:bg-background/90'
-			: 'border border-border hover:bg-surface-raised',
+			? 'bg-overlay/85 text-overlay-foreground shadow-sm backdrop-blur-sm hover:bg-overlay'
+			: 'border border-border text-foreground hover:bg-surface-raised',
 		className
 	)}
 >
 	<Heart
 		size={20}
 		stroke-width={1.75}
-		class={cn('transition-transform', active ? 'scale-110 fill-gold text-gold' : 'text-foreground')}
+		class={cn('transition-transform', active && 'scale-110 fill-sale text-sale')}
 	/>
 </button>

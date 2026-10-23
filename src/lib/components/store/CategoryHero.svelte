@@ -29,7 +29,7 @@
 		<!-- eslint-disable svelte/no-navigation-without-resolve -- callers pass a resolve()d path -->
 		<a
 			{href}
-			class="mt-2 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light"
+			class="mt-2 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
 		>
 			{cta}
 			<ArrowRight size={16} stroke-width={1.75} />

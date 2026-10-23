@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { LogOut } from '@lucide/svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import { NAV, isActive } from './nav.js';
 	import type { LayoutProps } from './$types';
 
@@ -63,7 +64,7 @@
 	<div
 		role="progressbar"
 		aria-label="Cargando"
-		class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-gold"
+		class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-gold-fill"
 	></div>
 {/if}
 
@@ -92,6 +93,7 @@
 					<span class="font-display text-gold">Ouroboros</span>
 				</a>
 				<p class="hidden truncate text-sm text-muted-foreground md:block">{data.adminEmail}</p>
+				<ThemeToggle />
 				<form method="POST" action="/admin/logout">
 					<button
 						type="submit"

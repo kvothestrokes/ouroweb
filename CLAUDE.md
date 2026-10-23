@@ -17,7 +17,7 @@ Tienda en línea de **Ouroboros**: playeras y sudaderas con diseños de anime / 
 
 - **SvelteKit + Svelte 5** (solo runes: `$props`, `$state`, `$derived`, `$effect`; snippets en lugar de slots; `onclick` en lugar de `on:click`).
 - **TypeScript** en modo estricto.
-- **Tailwind CSS v4** + **shadcn-svelte**. Tema oscuro único; tokens en `src/app.css` (plantilla en `setup/app.css`).
+- **Tailwind CSS v4** + **shadcn-svelte**. Dos temas, día (predeterminado) y noche (clase `dark` en `<html>`); tokens en `src/app.css`.
 - **Supabase**: Postgres, Auth (un solo admin), RLS, Realtime. Cliente con `@supabase/ssr`.
 - **ImageKit**: almacenamiento y transformación de imágenes. SDK y llave privada **solo en servidor**.
 - **Deploy:** Vercel (`@sveltejs/adapter-vercel`).

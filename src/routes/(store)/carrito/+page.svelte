@@ -46,7 +46,7 @@
 			{#snippet action()}
 				<a
 					href={resolve('/(store)')}
-					class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-gold-light"
+					class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 				>
 					Ir a la tienda
 				</a>
@@ -163,7 +163,7 @@
 					{#if quote.ok}
 						<a
 							href={resolve('/(store)/checkout')}
-							class="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-gold-light"
+							class="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
 						>
 							Continuar con mi pedido
 						</a>

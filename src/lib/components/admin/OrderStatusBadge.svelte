@@ -9,9 +9,9 @@
 		esperando_anticipo: 'border border-warning/50 text-warning',
 		confirmado: 'bg-accent/25 text-purple-light',
 		en_produccion: 'bg-accent/25 text-purple-light',
-		listo: 'bg-gold/15 text-gold',
-		enviado: 'bg-gold/15 text-gold',
-		listo_para_recoger: 'bg-gold/15 text-gold',
+		listo: 'bg-gold-fill/15 text-gold',
+		enviado: 'bg-gold-fill/15 text-gold',
+		listo_para_recoger: 'bg-gold-fill/15 text-gold',
 		entregado: 'bg-success/15 text-success',
 		cancelado: 'bg-surface-raised text-muted-foreground'
 	};
