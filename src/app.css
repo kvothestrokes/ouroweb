@@ -107,7 +107,31 @@
 	--warning: #fbbf24;
 	--danger: #f87171;
 
+	/* Re-derived here so a nested `.dark` section (the footer) recomputes them too */
+	--background: var(--bg);
+	--foreground: var(--text);
+	--card: var(--surface);
+	--card-foreground: var(--text);
 	--popover: var(--surface-raised);
+	--popover-foreground: var(--text);
+	--secondary: var(--surface-raised);
+	--secondary-foreground: var(--text);
+	--muted: var(--surface-raised);
+	--muted-foreground: var(--text-muted);
+	--destructive: var(--danger);
+	--border: var(--line);
+	--input: var(--line);
+	--sidebar: var(--surface);
+	--sidebar-foreground: var(--text);
+	--sidebar-accent: var(--surface-raised);
+	--sidebar-accent-foreground: var(--text);
+	--sidebar-border: var(--line);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-foreground);
+	--sidebar-ring: var(--ring);
+	--chart-3: var(--gold);
+	--chart-4: var(--sale);
+	--chart-5: var(--text-muted);
 	--primary: #d4af37;
 	--primary-hover: #f2d27a;
 	--primary-foreground: #17141c;

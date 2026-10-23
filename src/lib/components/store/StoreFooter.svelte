@@ -10,7 +10,7 @@
 	const year = new Date().getFullYear();
 </script>
 
-<footer class="mt-24 border-t border-border bg-surface">
+<footer class="dark mt-24 border-t border-border bg-background text-foreground">
 	<div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-[2fr_1fr_1fr] md:px-6">
 		<div class="flex flex-col gap-3">
 			<p class="font-display text-2xl text-gold">Ouroboros</p>
