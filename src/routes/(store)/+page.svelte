@@ -50,7 +50,26 @@
 	const firstHero = $derived(data.hero[0]);
 	const shareImage = $derived(firstHero?.cover ? imageUrl(firstHero.cover.image, 1000) : null);
 	const chip =
-		'inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors';
+		'inline-flex min-h-11 shrink-0 items-center rounded-md border px-4 text-sm font-medium transition-colors';
+
+	const WORKSHOP_LINES = [
+		{
+			title: 'Playeras y sudaderas',
+			detail: 'Estampado con tu arte, escena o personaje en la talla y color que elijas.'
+		},
+		{
+			title: 'Sublimación y termos',
+			detail: 'Tazas, playmats, mousepads y termos con grabado láser de precisión.'
+		},
+		{
+			title: 'Impresión 3D y Cricut',
+			detail: 'Figuras, props, stickers y vinil de corte a medida bajo pedido.'
+		},
+		{
+			title: 'Velas y regalos',
+			detail: 'Piezas temáticas listas para regalar o armar paquetes especiales.'
+		}
+	] as const;
 </script>
 
 <Seo
@@ -61,35 +80,35 @@
 
 <!-- Hero: editorial copy + product collage -->
 <section
-	class="mx-auto grid max-w-7xl items-center gap-10 px-4 pt-8 pb-14 md:px-6 lg:grid-cols-2 lg:pt-14 lg:pb-20"
+	class="mx-auto grid max-w-7xl items-center gap-10 px-4 pt-8 pb-14 md:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:pt-14 lg:pb-20"
 >
 	<div class="flex flex-col items-start gap-5">
-		<span
-			class="rounded-full bg-accent/12 px-3.5 py-1.5 text-xs font-semibold tracking-[0.14em] text-purple-light uppercase"
+		<p
+			class="border-l-2 border-gold pl-3 text-xs font-semibold tracking-[0.18em] text-foreground uppercase"
 		>
 			Anime · Gaming · Cultura pop
-		</span>
+		</p>
 		<h1
-			class="font-display text-5xl leading-[0.95] font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl xl:text-8xl"
+			class="font-display text-4xl leading-[0.98] font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
 		>
 			Lleva tu<br />fandom<br /><span class="text-gold">puesto.</span>
 		</h1>
 		<p class="max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">
-			Playeras, sudaderas y regalos con diseños originales. Elige color y talla; lo confirmamos
-			contigo por WhatsApp.
+			Playeras, sudaderas y regalos con diseños originales hechos en taller. Elige color y talla;
+			confirmamos tu pedido directamente por WhatsApp.
 		</p>
-		<div class="flex flex-wrap gap-3 pt-2">
+		<div class="flex flex-wrap items-center gap-6 pt-2">
 			<a
 				href="#novedades"
-				class="inline-flex min-h-13 items-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+				class="inline-flex min-h-12 items-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
 			>
 				Comprar ahora <ArrowRight size={16} stroke-width={2} />
 			</a>
 			<a
 				href={resolve('/(store)/encargos')}
-				class="inline-flex min-h-13 items-center gap-2 rounded-full border-2 border-foreground px-6 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
+				class="inline-flex min-h-11 items-center gap-1.5 border-b border-foreground py-1 text-sm font-semibold text-foreground transition-colors hover:border-gold hover:text-gold"
 			>
-				Pide algo personalizado
+				Pide algo personalizado <ArrowRight size={15} stroke-width={1.75} />
 			</a>
 		</div>
 	</div>
@@ -101,7 +120,7 @@
 					<a
 						href={resolve('/(store)/p/[producto]', { producto: item.product.slug })}
 						class={cn(
-							'absolute overflow-hidden rounded-[28px] shadow-xl transition-transform duration-500 hover:-translate-y-1',
+							'absolute overflow-hidden rounded-lg border border-border/60 shadow-lg transition-transform duration-500 hover:-translate-y-1',
 							i === 0 && 'top-8 left-0 h-[78%] w-[56%]',
 							i === 1 && 'top-0 right-0 h-[58%] w-[48%]',
 							i === 2 && 'right-4 bottom-0 h-[38%] w-[44%]'
@@ -121,7 +140,7 @@
 			{/each}
 			{#if firstHero?.product.precio != null}
 				<div
-					class="absolute bottom-[14%] left-[38%] z-10 flex max-w-[55%] flex-col rounded-2xl bg-overlay px-4 py-3 text-overlay-foreground shadow-2xl"
+					class="absolute bottom-[14%] left-[38%] z-10 flex max-w-[55%] flex-col rounded-md border border-overlay-line bg-overlay px-4 py-3 text-overlay-foreground shadow-xl"
 				>
 					<span class="truncate text-xs opacity-70">{firstHero.product.nombre}</span>
 					<span class="text-base font-bold tabular-nums">
@@ -136,20 +155,20 @@
 			{/if}
 		{:else}
 			<div
-				class="absolute inset-0 grid place-items-center rounded-[32px] bg-[radial-gradient(circle_at_50%_40%,color-mix(in_oklab,var(--color-gold-fill)_30%,transparent),transparent_65%)]"
+				class="absolute inset-0 grid place-items-center rounded-lg border border-border bg-surface-raised"
 			>
 				<img
 					src="/brand/ourologo.webp"
 					alt=""
-					class="size-56 rounded-full object-cover shadow-2xl"
+					class="size-56 rounded-full object-cover shadow-xl"
 				/>
 			</div>
 		{/if}
 		<span
-			class="absolute top-4 right-[40%] grid size-20 rotate-[-12deg] place-items-center rounded-full bg-gold-fill text-center font-display text-sm leading-tight font-bold text-on-gold shadow-lg"
+			class="absolute top-4 right-[40%] border border-on-gold/15 bg-gold-fill px-3 py-1.5 text-center font-display text-xs font-bold tracking-wider text-on-gold uppercase shadow-md"
 			aria-hidden="true"
 		>
-			Recién<br />llegado
+			Recién llegado
 		</span>
 	</div>
 </section>
@@ -225,7 +244,7 @@
 				<a
 					href={resolve('/(store)/c/[categoria]', { categoria: category.slug })}
 					class={cn(
-						'group relative flex size-full flex-col justify-between overflow-hidden rounded-[24px] p-5 transition-transform hover:-translate-y-0.5',
+						'group relative flex size-full flex-col justify-between overflow-hidden rounded-lg p-5 transition-transform hover:-translate-y-0.5',
 						first ? 'text-overlay-foreground' : TILE_STYLES[(i - 1) % TILE_STYLES.length]
 					)}
 				>
@@ -244,11 +263,11 @@
 						{/if}
 						<span class="relative mt-auto flex flex-col items-start gap-3">
 							<span
-								class="rounded-2xl bg-overlay/90 px-4 py-2 font-display text-3xl font-bold md:text-5xl"
+								class="rounded-md bg-overlay/90 px-4 py-2 font-display text-3xl font-bold md:text-5xl"
 								>{category.nombre}</span
 							>
 							<span
-								class="inline-flex items-center gap-1 rounded-full bg-overlay-foreground px-4 py-2 text-sm font-semibold text-overlay"
+								class="inline-flex items-center gap-1 rounded-md bg-overlay-foreground px-4 py-2 text-sm font-semibold text-overlay"
 							>
 								Ver todo <ArrowRight size={14} stroke-width={2} />
 							</span>
@@ -302,14 +321,14 @@
 					{#if data.total}
 						<a
 							href={resolve('/(store)/buscar')}
-							class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
+							class="inline-flex min-h-11 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 						>
 							Ver todo
 						</a>
 					{:else}
 						<ExternalLink
 							href={whatsappLink(PUBLIC_WHATSAPP_NUMBER, 'Hola, ¿qué diseños tienen disponibles?')}
-							class="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
+							class="inline-flex min-h-11 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
 						>
 							Escríbenos por WhatsApp
 						</ExternalLink>
@@ -322,7 +341,7 @@
 		<div class="mt-10 flex justify-center">
 			<a
 				href={resolve('/(store)/buscar')}
-				class="inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-foreground px-7 text-sm font-semibold hover:bg-foreground hover:text-background"
+				class="inline-flex min-h-12 items-center gap-2 rounded-md border-2 border-foreground px-7 text-sm font-semibold hover:bg-foreground hover:text-background"
 			>
 				Ver todo el catálogo <ArrowRight size={16} stroke-width={2} />
 			</a>
@@ -335,7 +354,7 @@
 	<section class="mx-auto max-w-7xl px-4 pb-20 md:px-6">
 		<!-- Always ink: `dark` scopes the night tokens to the banner. -->
 		<div
-			class="dark grid overflow-hidden rounded-[32px] border border-border bg-surface text-foreground md:min-h-[420px] md:grid-cols-2"
+			class="dark grid overflow-hidden rounded-lg border border-border bg-surface text-foreground md:min-h-[420px] md:grid-cols-2"
 		>
 			<div class="flex flex-col justify-center gap-4 p-8 md:p-14">
 				<span class="text-xs font-semibold tracking-[0.2em] text-gold-fill uppercase"
@@ -350,7 +369,7 @@
 				</p>
 				<a
 					href={resolve('/(store)/colecciones/[slug]', { slug: data.spotlight.slug })}
-					class="inline-flex min-h-12 w-fit items-center gap-2 rounded-full bg-gold-fill px-7 text-sm font-semibold text-on-gold transition-transform hover:-translate-y-0.5"
+					class="inline-flex min-h-12 w-fit items-center gap-2 rounded-md bg-gold-fill px-7 text-sm font-semibold text-on-gold transition-transform hover:-translate-y-0.5"
 				>
 					Ver la colección <ArrowRight size={16} stroke-width={2} />
 				</a>
@@ -390,7 +409,7 @@
 			class="flex [scrollbar-width:none] gap-3 overflow-x-auto md:grid md:grid-cols-5 md:overflow-visible [&::-webkit-scrollbar]:hidden"
 		>
 			{#each data.ugc as review (review.id)}
-				<li class="relative w-44 shrink-0 overflow-hidden rounded-2xl md:w-auto">
+				<li class="relative w-44 shrink-0 overflow-hidden rounded-lg md:w-auto">
 					<img
 						src={review.foto}
 						alt="Foto de un cliente"
@@ -399,7 +418,7 @@
 						class="aspect-square w-full object-cover image-guard"
 					/>
 					<span
-						class="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-overlay px-2.5 py-1 text-xs font-semibold text-overlay-foreground"
+						class="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-overlay px-2.5 py-1 text-xs font-semibold text-overlay-foreground"
 					>
 						<Star size={12} class="fill-gold-fill text-gold-fill" aria-hidden="true" />
 						{review.calificacion}
@@ -410,34 +429,41 @@
 	</section>
 {/if}
 
-<!-- Custom orders in 3 steps -->
-<section class="mx-auto max-w-7xl px-4 pb-20 md:px-6">
+<!-- Custom orders workshop showcase -->
+<section class="mx-auto max-w-7xl px-4 pb-20 md:px-6" aria-labelledby="encargos-taller">
 	<div
-		class="grid gap-8 rounded-[32px] bg-surface-raised p-7 md:p-12 lg:grid-cols-[1fr_2fr] lg:items-center"
+		class="grid gap-10 border-y border-border py-12 lg:grid-cols-[1fr_1.4fr] lg:items-start lg:gap-14"
 	>
 		<div class="flex flex-col items-start gap-4">
-			<span class="text-xs font-semibold tracking-[0.2em] text-foreground uppercase"
-				>Encargos especiales</span
+			<p
+				class="border-l-2 border-gold pl-3 text-xs font-semibold tracking-[0.2em] text-foreground uppercase"
 			>
-			<h2 class="font-display text-3xl leading-tight font-bold md:text-4xl">
-				¿Tienes una idea? Hagámosla realidad.
+				Encargos especiales
+			</p>
+			<h2 id="encargos-taller" class="font-display text-3xl leading-tight font-bold md:text-4xl">
+				¿Tienes una idea? La fabricamos en nuestro taller.
 			</h2>
+			<p class="max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
+				Mándanos tu imagen de referencia y para cuándo lo necesitas. Te respondemos por WhatsApp con
+				cotización, tiempos y un folio para seguir tu pedido.
+			</p>
 			<a
 				href={resolve('/(store)/encargos')}
-				class="inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-primary-foreground hover:bg-primary-hover"
+				class="mt-1 inline-flex min-h-12 items-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
 			>
 				<Sparkles size={16} stroke-width={1.75} /> Cotizar mi encargo
 			</a>
 		</div>
-		<ol class="grid gap-3 sm:grid-cols-3">
-			{#each [{ n: '01', t: 'Cuéntanos tu idea', d: 'Sube imágenes de referencia y dinos para cuándo la quieres.' }, { n: '02', t: 'Te cotizamos', d: 'Precio y tiempos por WhatsApp, sin compromiso.' }, { n: '03', t: 'Lo hacemos para ti', d: 'Sigue tu pedido con tu folio hasta que lo recibas.' }] as step (step.n)}
-				<li class="flex flex-col gap-2 rounded-2xl bg-card p-5">
-					<span class="font-display text-3xl font-bold text-gold">{step.n}</span>
-					<strong class="text-base">{step.t}</strong>
-					<span class="text-sm leading-relaxed text-muted-foreground">{step.d}</span>
-				</li>
+		<dl
+			class="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2"
+		>
+			{#each WORKSHOP_LINES as item (item.title)}
+				<div class="flex flex-col gap-1.5 bg-surface p-5">
+					<dt class="font-display text-base font-bold text-foreground">{item.title}</dt>
+					<dd class="text-sm leading-relaxed text-muted-foreground">{item.detail}</dd>
+				</div>
 			{/each}
-		</ol>
+		</dl>
 	</div>
 </section>
 

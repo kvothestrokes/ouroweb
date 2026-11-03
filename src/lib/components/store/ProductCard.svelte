@@ -76,10 +76,10 @@
 		<!-- eslint-disable svelte/no-navigation-without-resolve -- resolve()d path plus the color hash -->
 		<a
 			href={resolve(`/(store)/p/[producto]#${hash}`, { producto: product.slug })}
-			class="block rounded-2xl focus-visible:outline-offset-4"
+			class="block rounded-lg focus-visible:outline-offset-4"
 		>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			<div class="relative overflow-hidden rounded-2xl">
+			<div class="relative overflow-hidden rounded-lg">
 				{#if image}
 					<ProtectedImage
 						{image}

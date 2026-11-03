@@ -16,20 +16,20 @@
 </script>
 
 <section
-	class="relative isolate overflow-hidden rounded-2xl border border-border bg-surface md:grid md:min-h-80 md:grid-cols-2"
+	class="relative isolate overflow-hidden rounded-lg border border-border bg-surface md:grid md:min-h-80 md:grid-cols-2"
 >
-	<div
-		class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklab,var(--color-purple)_25%,transparent),transparent_60%)]"
-		aria-hidden="true"
-	></div>
 	<div class="flex flex-col justify-center gap-3 p-6 md:p-10">
-		<p class="text-xs font-medium tracking-[0.2em] text-purple-light uppercase">{eyebrow}</p>
+		<p
+			class="border-l-2 border-gold pl-3 text-xs font-medium tracking-[0.2em] text-purple-light uppercase"
+		>
+			{eyebrow}
+		</p>
 		<h2 class="text-3xl text-foreground md:text-4xl">{title}</h2>
 		<p class="max-w-md text-muted-foreground">{text}</p>
 		<!-- eslint-disable svelte/no-navigation-without-resolve -- callers pass a resolve()d path -->
 		<a
 			{href}
-			class="mt-2 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+			class="mt-2 inline-flex min-h-11 w-fit items-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
 		>
 			{cta}
 			<ArrowRight size={16} stroke-width={1.75} />

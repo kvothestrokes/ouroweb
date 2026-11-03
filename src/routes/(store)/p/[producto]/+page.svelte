@@ -154,7 +154,7 @@
 	<div class="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
 		<!-- Gallery -->
 		<div class="flex flex-col gap-3">
-			<div class="relative overflow-hidden rounded-[28px]">
+			<div class="relative overflow-hidden rounded-lg">
 				{#if image}
 					<ProtectedImage
 						{image}
@@ -181,7 +181,7 @@
 									type="button"
 									onclick={() => (color = option.key)}
 									aria-label="Ver en color {option.nombre}"
-									class="block w-full overflow-hidden rounded-[22px] transition-transform hover:-translate-y-0.5"
+									class="block w-full overflow-hidden rounded-lg transition-transform hover:-translate-y-0.5"
 								>
 									<ProtectedImage
 										image={preview}
@@ -406,10 +406,7 @@
 					</div>
 					{#if product.mayoreo}
 						{@const missingPieces = Math.max(0, product.mayoreo.cantidadMin - qty)}
-						<div
-							class="mt-1 flex flex-col gap-2 rounded-2xl bg-gold-fill/15 p-4"
-							aria-live="polite"
-						>
+						<div class="mt-1 flex flex-col gap-2 rounded-lg bg-gold-fill/15 p-4" aria-live="polite">
 							<p class="text-sm">
 								{#if missingPieces}
 									<strong>Precio de mayoreo:</strong> agrega {missingPieces}
@@ -438,7 +435,7 @@
 				{#if product.permitePersonalizar}
 					<div
 						class={cn(
-							'flex flex-col gap-3 rounded-2xl border-2 border-dashed p-4 transition-colors',
+							'flex flex-col gap-3 rounded-lg border-2 border-dashed p-4 transition-colors',
 							personalizar ? 'border-purple-light bg-accent/8' : 'border-accent/40'
 						)}
 					>

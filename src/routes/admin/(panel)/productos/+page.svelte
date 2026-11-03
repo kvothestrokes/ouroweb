@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { Eye, EyeOff, Plus, Search } from '@lucide/svelte';
+	import { Eye, EyeOff, Plus, Search, Upload } from '@lucide/svelte';
 	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { formatMoney } from '#lib/domain/money.js';
@@ -35,10 +35,16 @@
 
 <div class="flex flex-wrap items-center justify-between gap-3">
 	<h1 class="font-display text-2xl text-foreground md:text-3xl">Productos</h1>
-	<Button href={resolve('/admin/(panel)/productos/nuevo')} class="min-h-11">
-		<Plus size={18} strokeWidth={1.75} aria-hidden="true" />
-		Nuevo producto
-	</Button>
+	<div class="flex flex-wrap gap-2">
+		<Button variant="outline" href={resolve('/admin/(panel)/importar')} class="min-h-11">
+			<Upload size={18} strokeWidth={1.75} aria-hidden="true" />
+			Importar
+		</Button>
+		<Button href={resolve('/admin/(panel)/productos/nuevo')} class="min-h-11">
+			<Plus size={18} strokeWidth={1.75} aria-hidden="true" />
+			Nuevo producto
+		</Button>
+	</div>
 </div>
 
 <FormMessage error={form?.message} success={form?.success} class="mt-6" />

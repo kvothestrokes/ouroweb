@@ -10,9 +10,9 @@ Assumptions: the customization reference image is requested over WhatsApp until 
 
 ## Tasks
 
-| ID  | Specs | Route  | Status | Evidence                                                                                                                                          |
-| --- | ----- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T0  | S1    | inline | done   | fd1aae1 public watermarked image endpoints                                                                                                        |
+| ID  | Specs | Route  | Status | Evidence                                                                                                                                         |
+| --- | ----- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T0  | S1    | inline | done   | fd1aae1 public watermarked image endpoints                                                                                                       |
 | T1  | S1    | inline | done   | RED 8 + 10 fails → GREEN; 114 tests; check/lint/build pass; browser 375/1280 with temporary demo data: cart line, favorites, stock filter, guide |
 
 Route evidence: one sequential unit sharing the store layout and data module; no Writer trigger reason.
