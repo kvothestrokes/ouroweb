@@ -35,7 +35,7 @@ Moda en línea (Zara, H&M, Uniqlo, Shein): mucha imagen, tipografía grande, gri
 ## Tipografía
 
 - Títulos (`h1`–`h3`, nombres de categoría, hero): `font-display` (Cinzel).
-- Todo lo demás: `font-sans` (Inter).
+- Todo lo demás: `font-sans` (Plus Jakarta Sans Variable).
 - Precios: `font-bold tabular-nums text-foreground`; en oferta `text-sale` con el normal tachado (`<s>` + `sr-only` «antes»). Etiqueta de oferta: `bg-sale text-on-sale`.
 - Formato de dinero: `Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })`, en una utilidad compartida `src/lib/domain/money.ts`.
 

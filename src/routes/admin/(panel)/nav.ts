@@ -12,7 +12,8 @@ import {
 	Shirt,
 	Sparkles,
 	ShoppingBag,
-	Tags
+	Tags,
+	Upload
 } from '@lucide/svelte';
 
 /** Panel routes without parameters: the only ones a menu item can point to. */
@@ -53,6 +54,12 @@ export const NAV: NavItem[] = [
 		label: 'Productos',
 		icon: ShoppingBag,
 		route: '/admin/(panel)/productos'
+	},
+	{
+		path: '/admin/importar',
+		label: 'Importar productos',
+		icon: Upload,
+		route: '/admin/(panel)/importar'
 	},
 	{
 		path: '/admin/tipos-de-prenda',

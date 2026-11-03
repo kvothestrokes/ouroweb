@@ -19,7 +19,7 @@
 
 <section
 	aria-labelledby="resumen"
-	class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5"
+	class="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5"
 >
 	<h2 id="resumen" class="text-lg">Resumen</h2>
 	<dl class="flex flex-col gap-2 text-sm">
