@@ -1,4 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
+import { categoryImageVersion } from '#lib/domain/store-product.js';
 import { renderDesignMockup } from './designs.js';
 import { parseFotoKey, loadWatermarkSource } from './garment-assets.js';
 import { downloadImage } from './imagekit.js';
@@ -101,6 +102,18 @@ export async function galleryPhoto(id: string, url: URL): Promise<Buffer> {
 		.maybeSingle();
 	if (!data) error(404, 'No encontrado');
 	return watermarked(data.imagekit_path, canonicalImageQuery(url, Date.parse(data.updated_at)));
+}
+
+/** Category cover photo configured in `/admin/categorias`. */
+export async function categoryPhoto(id: string, url: URL): Promise<Buffer> {
+	const { data } = await publicDb()
+		.from('categories')
+		.select('imagen_hero')
+		.eq('id', id)
+		.maybeSingle();
+	if (!data?.imagen_hero) error(404, 'No encontrado');
+	const width = canonicalImageQuery(url, categoryImageVersion(data.imagen_hero));
+	return watermarked(data.imagen_hero, width);
 }
 
 /**

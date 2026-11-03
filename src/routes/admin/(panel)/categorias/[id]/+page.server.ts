@@ -1,7 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { categoryFromForm } from '#lib/domain/catalog.js';
-import { deleteCategory, listCategories, saveCategory } from '#lib/server/categories.js';
+import {
+	clearCategoryImage,
+	deleteCategory,
+	listCategories,
+	saveCategory,
+	setCategoryImage,
+	withCategoryPreview
+} from '#lib/server/categories.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -14,7 +21,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	const hasChildren = rows.some((row) => row.parent_id === category.id);
 	return {
-		category,
+		category: withCategoryPreview(category),
 		hasChildren,
 		// A category with subcategories stays a root, so it gets no parent options.
 		roots: hasChildren
@@ -33,6 +40,22 @@ export const actions = {
 		const problem = await saveCategory(locals.supabase, input.value, params.id);
 		if (problem) return fail(400, { message: problem });
 		return { success: 'Cambios guardados.' };
+	},
+
+	imagen: async ({ request, locals, params }) => {
+		const file = (await request.formData()).get('foto');
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { message: 'Elige una imagen (JPG, PNG o WebP).' });
+		}
+		const problem = await setCategoryImage(locals.supabase, params.id, file);
+		if (problem) return fail(400, { message: problem });
+		return { success: 'Imagen del panel actualizada.' };
+	},
+
+	quitarImagen: async ({ locals, params }) => {
+		const problem = await clearCategoryImage(locals.supabase, params.id);
+		if (problem) return fail(400, { message: problem });
+		return { success: 'Imagen del panel eliminada.' };
 	},
 
 	eliminar: async ({ locals, params }) => {

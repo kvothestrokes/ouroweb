@@ -4,6 +4,7 @@ import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$app/env/p
 import {
 	type StoreCollection,
 	toProductDetail,
+	toStoreCategory,
 	toStoreProduct,
 	type ProductDetail,
 	type StoreCategoryTree,
@@ -49,11 +50,11 @@ export async function loadCategoryTree(): Promise<StoreCategoryTree> {
 	const rows = unwrap(
 		await db
 			.from('categories')
-			.select('id, slug, nombre, parent_id, es_estrella, orden, activo')
+			.select('id, slug, nombre, parent_id, es_estrella, orden, activo, imagen_hero')
 			.order('orden')
 			.order('nombre')
 	);
-	return toTree(rows);
+	return toTree(rows.map(toStoreCategory));
 }
 
 /** Every active product, newest first. The catalog is small enough to filter in memory. */

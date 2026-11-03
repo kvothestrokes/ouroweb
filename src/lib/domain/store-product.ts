@@ -207,9 +207,43 @@ export function imageSrcset(image: ProductImage): string {
 	return IMAGE_WIDTHS.map((width) => `${imageUrl(image, width)} ${width}w`).join(', ');
 }
 
-export type StoreCategory = CategoryRow;
+export type StoreCategory = Omit<CategoryRow, 'imagen_hero'> & {
+	imagen?: ProductImage | null;
+};
 export type StoreCategoryTree = (StoreCategory & { children: StoreCategory[] })[];
 export type StoreCollection = { id: string; slug: string; nombre: string };
+
+/** Deterministic positive integer version from a stored image path, so a new upload busts CDN cache. */
+export function categoryImageVersion(path: string): number {
+	let hash = 2166136261;
+	for (let i = 0; i < path.length; i++) {
+		hash ^= path.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return hash >>> 0 || 1;
+}
+
+/** Public `/img/c/<id>` image reference for a category's hero photo; never exposes the ImageKit path. */
+export function categoryImage(
+	id: string,
+	imagenHero: string | null | undefined
+): ProductImage | null {
+	if (!imagenHero) return null;
+	return {
+		key: id,
+		src: `/img/c/${id}`,
+		version: categoryImageVersion(imagenHero)
+	};
+}
+
+/** Converts a DB category row into a browser-safe StoreCategory without exposing raw ImageKit paths. */
+export function toStoreCategory(row: CategoryRow): StoreCategory {
+	const { imagen_hero, ...rest } = row;
+	return {
+		...rest,
+		imagen: categoryImage(row.id, imagen_hero)
+	};
+}
 
 /**
  * Facets for the filter panel, from the products being shown. Sizes keep the garment

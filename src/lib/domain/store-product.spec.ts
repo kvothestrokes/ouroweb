@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
 	availableSizes,
+	categoryImage,
+	categoryImageVersion,
 	facetsFor,
 	findCategory,
 	productImages,
 	toProductDetail,
+	toStoreCategory,
 	toStoreProduct
 } from './store-product.js';
 import { playera, row } from './test-fixtures.js';
@@ -152,6 +155,36 @@ describe('findCategory', () => {
 
 	it('returns null for unknown or hidden categories', () => {
 		expect(findCategory(tree, 'velas')).toBeNull();
+	});
+});
+
+describe('categoryImage & toStoreCategory', () => {
+	it('builds a versioned /img/c/<id> reference and strips the raw ImageKit path', () => {
+		const raw = {
+			id: 'cat-1',
+			slug: 'ropa',
+			nombre: 'Ropa',
+			parent_id: null,
+			es_estrella: false,
+			orden: 1,
+			activo: true,
+			imagen_hero: '/ouroboros/products/categories/ropa_123.webp'
+		};
+		const storeCat = toStoreCategory(raw);
+		expect('imagen_hero' in storeCat).toBe(false);
+		expect(storeCat.imagen).toEqual({
+			key: 'cat-1',
+			src: '/img/c/cat-1',
+			version: categoryImageVersion('/ouroboros/products/categories/ropa_123.webp')
+		});
+		expect(categoryImage('cat-1', null)).toBeNull();
+	});
+
+	it('changes version when the uploaded file path changes', () => {
+		const v1 = categoryImageVersion('/ouroboros/products/categories/ropa_1.webp');
+		const v2 = categoryImageVersion('/ouroboros/products/categories/ropa_2.webp');
+		expect(v1).not.toBe(v2);
+		expect(v1).toBeGreaterThan(0);
 	});
 });
 

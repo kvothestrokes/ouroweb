@@ -1,25 +1,91 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance, type SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { Eye, EyeOff, Pencil, Plus, Star } from '@lucide/svelte';
+	import { Eye, EyeOff, ImagePlus, Pencil, Plus, Star, Trash2 } from '@lucide/svelte';
+	import { downscaleImage } from '#lib/client/downscale-image.js';
 	import CategoryFields from '#lib/components/admin/CategoryFields.svelte';
 	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import type { CategoryRow } from '#lib/domain/catalog.js';
+	import type { AdminCategoryRow } from '#lib/server/categories.js';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 	let creating = $state(false);
+	let uploadingId = $state<string | null>(null);
 
 	const roots = $derived(data.tree.map(({ id, nombre }) => ({ id, nombre })));
+
+	function uploadCover(categoryId: string): SubmitFunction {
+		return async ({ formData }) => {
+			uploadingId = categoryId;
+			const photo = formData.get('foto');
+			if (photo instanceof File && photo.size > 0) {
+				formData.set('foto', await downscaleImage(photo, 2000, { keepPng: false }));
+			}
+			return async ({ update }) => {
+				await update();
+				uploadingId = null;
+			};
+		};
+	}
 </script>
 
 <svelte:head>
 	<title>Categorías · Panel Ouroboros</title>
 </svelte:head>
 
-{#snippet actions(category: CategoryRow, isChild: boolean)}
+{#snippet actions(category: AdminCategoryRow, isChild: boolean)}
 	<div class="flex shrink-0 items-center gap-1">
+		{#if !isChild}
+			<form
+				method="POST"
+				action="?/imagen"
+				enctype="multipart/form-data"
+				use:enhance={uploadCover(category.id)}
+			>
+				<input type="hidden" name="id" value={category.id} />
+				<label
+					class={[
+						'inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-xs font-medium transition-colors',
+						uploadingId === category.id
+							? 'pointer-events-none opacity-60'
+							: 'text-foreground hover:bg-surface-raised'
+					]}
+				>
+					<ImagePlus size={16} strokeWidth={1.75} aria-hidden="true" />
+					<span>
+						{#if uploadingId === category.id}
+							Subiendo…
+						{:else if category.imagen_url}
+							Cambiar imagen
+						{:else}
+							Subir imagen
+						{/if}
+					</span>
+					<input
+						type="file"
+						name="foto"
+						accept="image/jpeg,image/png,image/webp"
+						disabled={uploadingId === category.id}
+						onchange={(event) => event.currentTarget.form?.requestSubmit()}
+						class="sr-only"
+					/>
+				</label>
+			</form>
+			{#if category.imagen_url}
+				<form method="POST" action="?/quitarImagen" use:enhance>
+					<input type="hidden" name="id" value={category.id} />
+					<button
+						type="submit"
+						aria-label="Quitar imagen de {category.nombre}"
+						title="Quitar imagen del panel"
+						class="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+					>
+						<Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />
+					</button>
+				</form>
+			{/if}
+		{/if}
 		{#if isChild}
 			<form method="POST" action="?/estrella" use:enhance>
 				<input type="hidden" name="id" value={category.id} />
@@ -73,7 +139,7 @@
 	</div>
 {/snippet}
 
-{#snippet label(category: CategoryRow)}
+{#snippet label(category: AdminCategoryRow)}
 	<div class="min-w-0 flex-1">
 		<p
 			class={[
@@ -98,8 +164,9 @@
 	<h1 class="font-display text-2xl text-foreground md:text-3xl">Categorías</h1>
 </div>
 <p class="mt-2 max-w-prose text-muted-foreground">
-	Las categorías principales van en el menú de la tienda; la subcategoría con estrella sale en el
-	banner de su categoría.
+	Las categorías principales van en el menú y en los paneles de la pantalla de inicio; desde aquí
+	puedes subir o cambiar la imagen de cada panel. La subcategoría con estrella sale en el banner de
+	su categoría.
 </p>
 
 <FormMessage error={form?.message} success={form?.success} class="mt-6" />
@@ -142,7 +209,25 @@
 	<ul class="mt-6 flex flex-col gap-4">
 		{#each data.tree as root (root.id)}
 			<li class="rounded-xl border border-border bg-card">
-				<div class="flex items-center gap-3 px-4 py-2">
+				<div class="flex flex-wrap items-center gap-3 px-4 py-3">
+					<div
+						class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised"
+					>
+						{#if root.imagen_url}
+							<img
+								src={root.imagen_url}
+								alt="Portada de {root.nombre}"
+								class="size-full object-cover"
+							/>
+						{:else}
+							<ImagePlus
+								size={20}
+								strokeWidth={1.75}
+								class="text-muted-foreground"
+								aria-hidden="true"
+							/>
+						{/if}
+					</div>
 					{@render label(root)}
 					{@render actions(root, false)}
 				</div>

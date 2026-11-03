@@ -32,14 +32,17 @@ export const load: PageServerLoad = async ({ parent }) => {
 		? products.filter((product) => product.colecciones.includes(spotlight.slug)).slice(0, 2)
 		: [];
 
-	const categoryCovers = categories.map((root) => {
+	const categoryCovers = categories.map((root, index) => {
 		const ids = [root.id, ...root.children.map((child) => child.id)];
+		const customCover = root.imagen ? { image: root.imagen, hex: null, blend: false } : null;
+		const productCover =
+			index === 0 ? cover(products.find((product) => ids.includes(product.categoryId))) : null;
 		return {
 			id: root.id,
 			slug: root.slug,
 			nombre: root.nombre,
 			subcategorias: root.children.slice(0, 2).map((child) => child.nombre),
-			cover: cover(products.find((product) => ids.includes(product.categoryId)))
+			cover: customCover ?? productCover
 		};
 	});
 

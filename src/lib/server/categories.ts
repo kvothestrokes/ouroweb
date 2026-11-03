@@ -5,10 +5,24 @@ import {
 	type CategoryRow
 } from '#lib/domain/catalog.js';
 import type { Database } from '#lib/types/database.js';
+import { deleteImageByPath, signedImageUrl, uploadImage } from './imagekit.js';
+import { preparePhoto } from './product-photos.js';
 
 type Db = SupabaseClient<Database>;
 
-const COLUMNS = 'id, slug, nombre, parent_id, es_estrella, orden, activo';
+const COLUMNS = 'id, slug, nombre, parent_id, es_estrella, orden, activo, imagen_hero';
+
+export type AdminCategoryRow = Omit<CategoryRow, 'imagen_hero'> & {
+	imagen_url: string | null;
+};
+
+export function withCategoryPreview(row: CategoryRow): AdminCategoryRow {
+	const { imagen_hero, ...rest } = row;
+	return {
+		...rest,
+		imagen_url: imagen_hero ? signedImageUrl(imagen_hero, [{ width: 320 }]) : null
+	};
+}
 
 export async function listCategories(db: Db): Promise<CategoryRow[] | null> {
 	const { data, error } = await db
@@ -19,7 +33,9 @@ export async function listCategories(db: Db): Promise<CategoryRow[] | null> {
 	return error ? null : data;
 }
 
-export function toTree<T extends CategoryRow>(rows: T[]): (T & { children: T[] })[] {
+export function toTree<T extends { id: string; parent_id: string | null }>(
+	rows: T[]
+): (T & { children: T[] })[] {
 	return rows
 		.filter((row) => !row.parent_id)
 		.map((root) => ({ ...root, children: rows.filter((row) => row.parent_id === root.id) }));
@@ -99,7 +115,65 @@ export async function setCategoryActive(
 	return error ? 'No pudimos cambiar el estado. Intenta de nuevo.' : null;
 }
 
+export async function setCategoryImage(db: Db, id: string, file: File): Promise<string | null> {
+	const { data: category } = await db
+		.from('categories')
+		.select('id, imagen_hero')
+		.eq('id', id)
+		.maybeSingle();
+	if (!category) return 'Esa categoría no existe.';
+
+	const prepared = await preparePhoto(file);
+	if (!prepared.ok) return prepared.message;
+
+	let path: string;
+	try {
+		path = await uploadImage(
+			new File([new Uint8Array(prepared.bytes)], 'portada.webp', { type: 'image/webp' }),
+			'products',
+			'categories'
+		);
+	} catch {
+		return 'No pudimos subir la imagen. Intenta de nuevo.';
+	}
+
+	const { error } = await db.from('categories').update({ imagen_hero: path }).eq('id', id);
+	if (error) {
+		await deleteImageByPath(path);
+		return 'No pudimos guardar la imagen. Intenta de nuevo.';
+	}
+	if (category.imagen_hero) {
+		await deleteImageByPath(category.imagen_hero);
+	}
+	return null;
+}
+
+export async function clearCategoryImage(db: Db, id: string): Promise<string | null> {
+	const { data: category } = await db
+		.from('categories')
+		.select('id, imagen_hero')
+		.eq('id', id)
+		.maybeSingle();
+	if (!category) return 'Esa categoría no existe.';
+	if (!category.imagen_hero) return null;
+
+	const { error } = await db.from('categories').update({ imagen_hero: null }).eq('id', id);
+	if (error) return 'No pudimos quitar la imagen. Intenta de nuevo.';
+
+	await deleteImageByPath(category.imagen_hero);
+	return null;
+}
+
 export async function deleteCategory(db: Db, id: string): Promise<string | null> {
-	const { error } = await db.from('categories').delete().eq('id', id);
-	return error ? messageFor(error.code, 'No pudimos eliminarla. Intenta de nuevo.') : null;
+	const { data, error } = await db
+		.from('categories')
+		.delete()
+		.eq('id', id)
+		.select('imagen_hero')
+		.maybeSingle();
+	if (error) return messageFor(error.code, 'No pudimos eliminarla. Intenta de nuevo.');
+	if (data?.imagen_hero) {
+		await deleteImageByPath(data.imagen_hero);
+	}
+	return null;
 }

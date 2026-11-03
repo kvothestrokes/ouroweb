@@ -14,7 +14,10 @@ export type CategoryInput = {
 
 export type CollectionInput = { nombre: string; slug: string };
 
-export type CategoryRow = CategoryInput & { id: string };
+export type CategoryRow = CategoryInput & {
+	id: string;
+	imagen_hero?: string | null;
+};
 
 export type CategoryTree = (CategoryRow & { children: CategoryRow[] })[];
 

@@ -2,18 +2,21 @@ import { error, fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { categoryFromForm } from '#lib/domain/catalog.js';
 import {
+	clearCategoryImage,
 	listCategories,
 	makeStar,
 	saveCategory,
 	setCategoryActive,
-	toTree
+	setCategoryImage,
+	toTree,
+	withCategoryPreview
 } from '#lib/server/categories.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const rows = await listCategories(locals.supabase);
 	if (!rows) error(500, 'No pudimos cargar las categorías.');
-	return { tree: toTree(rows) };
+	return { tree: toTree(rows.map(withCategoryPreview)) };
 };
 
 const idField = z.uuid();
@@ -49,5 +52,26 @@ export const actions = {
 		const problem = await makeStar(locals.supabase, id);
 		if (problem) return fail(400, { message: problem });
 		return { success: 'Categoría estrella actualizada.' };
+	},
+
+	imagen: async ({ request, locals }) => {
+		const form = await request.formData();
+		const id = readId(form);
+		if (!id) return fail(400, { message: 'Esa categoría no existe.' });
+		const file = form.get('foto');
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { message: 'Elige una imagen (JPG, PNG o WebP).' });
+		}
+		const problem = await setCategoryImage(locals.supabase, id, file);
+		if (problem) return fail(400, { message: problem });
+		return { success: 'Imagen del panel actualizada.' };
+	},
+
+	quitarImagen: async ({ request, locals }) => {
+		const id = readId(await request.formData());
+		if (!id) return fail(400, { message: 'Esa categoría no existe.' });
+		const problem = await clearCategoryImage(locals.supabase, id);
+		if (problem) return fail(400, { message: problem });
+		return { success: 'Imagen del panel eliminada.' };
 	}
 } satisfies Actions;

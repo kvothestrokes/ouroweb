@@ -245,7 +245,9 @@
 					href={resolve('/(store)/c/[categoria]', { categoria: category.slug })}
 					class={cn(
 						'group relative flex size-full flex-col justify-between overflow-hidden rounded-lg p-5 transition-transform hover:-translate-y-0.5',
-						first ? 'text-overlay-foreground' : TILE_STYLES[(i - 1) % TILE_STYLES.length]
+						first || category.cover
+							? 'text-overlay-foreground'
+							: TILE_STYLES[(i - 1) % TILE_STYLES.length]
 					)}
 				>
 					{#if first}
@@ -273,11 +275,25 @@
 							</span>
 						</span>
 					{:else}
-						<span class="text-[11px] font-semibold tracking-[0.14em] uppercase opacity-80">
+						{#if category.cover}
+							<ProtectedImage
+								image={category.cover.image}
+								alt=""
+								sizes="(min-width: 768px) 33vw, 50vw"
+								tint={tintOf(category.cover)}
+								blend={category.cover.blend}
+								class="absolute inset-0 transition-transform duration-700 group-hover:scale-[1.03]"
+							/>
+							<span
+								class="pointer-events-none absolute inset-0 bg-gradient-to-t from-overlay/85 via-overlay/45 to-overlay/25"
+								aria-hidden="true"
+							></span>
+						{/if}
+						<span class="relative text-[11px] font-semibold tracking-[0.14em] uppercase opacity-85">
 							{category.subcategorias.join(' · ') || 'Ver todo'}
 						</span>
 						<span
-							class="font-display text-lg leading-tight font-bold hyphens-auto sm:text-2xl md:text-3xl"
+							class="relative font-display text-lg leading-tight font-bold hyphens-auto sm:text-2xl md:text-3xl"
 							>{category.nombre}</span
 						>
 					{/if}
