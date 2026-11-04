@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { customRequestFromForm, customRequestTypeFromForm } from './custom-request.js';
+import {
+	customRequestFromForm,
+	customRequestTypeFromForm,
+	parseSizeBreakdown
+} from './custom-request.js';
 
 function form(fields: Record<string, string>) {
 	const data = new FormData();
@@ -59,7 +63,10 @@ describe('customRequestFromForm', () => {
 					custom_request_type_id: null,
 					descripcion: 'Un termo con el logo de mi equipo\ny mi nombre',
 					cantidad: 3,
-					fecha_deseada: '2026-11-20'
+					fecha_deseada: '2026-11-20',
+					tipo_producto: null,
+					color: null,
+					desglose_tallas: []
 				},
 				contact: {
 					nombre: 'Ana',
@@ -99,5 +106,55 @@ describe('customRequestFromForm', () => {
 			message: 'La fecha deseada debe ser de hoy en adelante.'
 		});
 		expect(customRequestFromForm(form({ ...base, fecha_deseada: '' }), today).ok).toBe(true);
+	});
+
+	it('reads structured product type, color, and calculates total pieces from size breakdown', () => {
+		const result = customRequestFromForm(
+			form({
+				...base,
+				tipo_producto: 'Playera Cuello Redondo',
+				color: 'Negro',
+				cantidad: '1', // Overridden by sum of breakdown (2 + 1 = 3)
+				desglose_tallas: JSON.stringify([
+					{ talla: 'M', cantidad: 2 },
+					{ talla: 'G', cantidad: 1 }
+				])
+			}),
+			today
+		);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.value.request.tipo_producto).toBe('Playera Cuello Redondo');
+		expect(result.value.request.color).toBe('Negro');
+		expect(result.value.request.cantidad).toBe(3);
+		expect(result.value.request.desglose_tallas).toEqual([
+			{ talla: 'M', cantidad: 2 },
+			{ talla: 'G', cantidad: 1 }
+		]);
+	});
+});
+
+describe('parseSizeBreakdown', () => {
+	it('parses valid JSON strings and filters invalid or zero-quantity items', () => {
+		expect(
+			parseSizeBreakdown(
+				JSON.stringify([
+					{ talla: 'CH', cantidad: 1 },
+					{ talla: 'M', cantidad: 0 },
+					{ talla: '', cantidad: 2 },
+					{ talla: 'XL', cantidad: 3 }
+				])
+			)
+		).toEqual([
+			{ talla: 'CH', cantidad: 1 },
+			{ talla: 'XL', cantidad: 3 }
+		]);
+	});
+
+	it('handles empty, null, or malformed values gracefully', () => {
+		expect(parseSizeBreakdown('')).toEqual([]);
+		expect(parseSizeBreakdown(null)).toEqual([]);
+		expect(parseSizeBreakdown('invalid-json')).toEqual([]);
+		expect(parseSizeBreakdown({})).toEqual([]);
 	});
 });

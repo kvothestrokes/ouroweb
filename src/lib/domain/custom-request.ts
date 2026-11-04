@@ -27,12 +27,48 @@ export function customRequestTypeFromForm(form: FormData): FormResult<CustomRequ
 	return { ok: true, value: { nombre, precio_desde: precio, activo: form.get('activo') === 'on' } };
 }
 
+export type SizeBreakdownItem = {
+	talla: string;
+	cantidad: number;
+};
+
+export const sizeBreakdownItemSchema = z.object({
+	talla: z.string().trim().min(1).max(20),
+	cantidad: z.number().int().min(1).max(999)
+});
+
+export function parseSizeBreakdown(raw: unknown): SizeBreakdownItem[] {
+	if (!raw) return [];
+	let parsed = raw;
+	if (typeof raw === 'string') {
+		const trimmed = raw.trim();
+		if (!trimmed || trimmed === '[]') return [];
+		try {
+			parsed = JSON.parse(trimmed);
+		} catch {
+			return [];
+		}
+	}
+	if (!Array.isArray(parsed)) return [];
+	const valid: SizeBreakdownItem[] = [];
+	for (const item of parsed) {
+		const res = sizeBreakdownItemSchema.safeParse(item);
+		if (res.success && res.data.cantidad > 0) {
+			valid.push(res.data);
+		}
+	}
+	return valid;
+}
+
 export type CustomRequestInput = {
 	custom_request_type_id: string | null;
 	descripcion: string;
 	cantidad: number;
 	/** `YYYY-MM-DD`, or null when the customer has no date. */
 	fecha_deseada: string | null;
+	tipo_producto?: string | null;
+	color?: string | null;
+	desglose_tallas?: SizeBreakdownItem[];
 };
 
 export const MAX_REFERENCE_IMAGES = 3;
@@ -58,7 +94,18 @@ export function customRequestFromForm(
 		return { ok: false, message: 'La descripción es muy larga (máximo 1000 caracteres).' };
 	}
 
-	const cantidad = Number(text(form, 'cantidad') || '1');
+	const tipoProducto = cleanText(text(form, 'tipo_producto'), false) || null;
+	const color = cleanText(text(form, 'color'), false) || null;
+	const desgloseTallas = parseSizeBreakdown(form.get('desglose_tallas'));
+
+	let cantidad = Number(text(form, 'cantidad') || '1');
+	if (desgloseTallas.length > 0) {
+		const totalPieces = desgloseTallas.reduce((sum, item) => sum + item.cantidad, 0);
+		if (totalPieces > 0) {
+			cantidad = totalPieces;
+		}
+	}
+
 	if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 999) {
 		return { ok: false, message: 'La cantidad debe ser de 1 a 999 piezas.' };
 	}
@@ -104,7 +151,10 @@ export function customRequestFromForm(
 				custom_request_type_id: tipo || null,
 				descripcion,
 				cantidad,
-				fecha_deseada: fecha || null
+				fecha_deseada: fecha || null,
+				tipo_producto: tipoProducto,
+				color,
+				desglose_tallas: desgloseTallas
 			},
 			contact: contact.value
 		}

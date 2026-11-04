@@ -3,6 +3,7 @@ import {
 	DEFAULT_B2B_SETTINGS,
 	DEFAULT_OUTBOUND_TEMPLATES,
 	b2bPackageFromForm,
+	b2bProspectFromForm,
 	b2bQuoteFromForm,
 	b2bSettingsFromForm,
 	buildProspectingLink,
@@ -52,7 +53,7 @@ describe('prospecting personalization (Cocktail Party Effect)', () => {
 		expect(sanitizeProspectName('')).toBeNull();
 	});
 
-	it('builds clean prospecting URLs with encoded parameters', () => {
+	it('builds clean prospecting URLs with encoded parameters or short slug', () => {
 		const url = buildProspectingLink('https://ouroboros.mx/', {
 			empresa: 'Gym Titán',
 			contacto: 'Sofía',
@@ -61,6 +62,30 @@ describe('prospecting personalization (Cocktail Party Effect)', () => {
 		expect(url).toBe(
 			'https://ouroboros.mx/empresas?para=Gym+Tit%C3%A1n&contacto=Sof%C3%ADa&pack=uniformes-equipo'
 		);
+
+		const slugUrl = buildProspectingLink('https://ouroboros.mx/', {
+			slug: 'cafeteria-central',
+			empresa: 'Cafetería Central'
+		});
+		expect(slugUrl).toBe('https://ouroboros.mx/empresas?p=cafeteria-central');
+	});
+
+	it('validates and normalizes a saved B2B prospect form', () => {
+		const form = new FormData();
+		form.set('empresa', 'Clínica Dental Roble');
+		form.set('contacto', 'Dra. Elena');
+		form.set('whatsapp', '961 234 5678');
+		form.set('paquete_slug', 'uniformes-equipo');
+		form.set('nota', 'Propuesta de uniformes y termos para su equipo.');
+		form.set('logo_fondo_sugerido', 'light');
+
+		const res = b2bProspectFromForm(form);
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+		expect(res.value.slug).toBe('clinica-dental-roble');
+		expect(res.value.whatsapp).toBe('529612345678');
+		expect(res.value.logo_fondo_sugerido).toBe('light');
+		expect(res.value.activo).toBe(true);
 	});
 
 	it('renders outbound WhatsApp message with optional contact and note', () => {
@@ -183,4 +208,3 @@ describe('b2bPackageFromForm & b2bSettingsFromForm', () => {
 		expect(res.value.faqs[0].pregunta).toBe('¿Facturan?');
 	});
 });
-

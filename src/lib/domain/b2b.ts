@@ -3,6 +3,7 @@ import type { FormResult } from './catalog.js';
 import { cleanText, parseContact, type Contact } from './checkout.js';
 import type { CustomRequestInput } from './custom-request.js';
 import { parseMoney } from './money.js';
+import { normalizeMxPhone } from './phone.js';
 import { isSlug, slugify } from './slug.js';
 
 export type B2bGuarantee = {
@@ -67,6 +68,23 @@ export type B2bPortfolioItem = {
 	imagekit_path: string;
 	activo: boolean;
 	orden: number;
+	updated_at: string;
+};
+
+export type B2bLogoSurface = 'dark' | 'light';
+
+export type B2bProspect = {
+	id: string;
+	slug: string;
+	empresa: string;
+	contacto: string | null;
+	whatsapp: string | null;
+	paquete_slug: string | null;
+	nota: string | null;
+	logo_imagekit_path: string | null;
+	logo_fondo_sugerido: B2bLogoSurface;
+	activo: boolean;
+	created_at: string;
 	updated_at: string;
 };
 
@@ -364,9 +382,16 @@ export function sanitizeProspectName(
 
 export function buildProspectingLink(
 	origin: string,
-	params: { empresa?: string; contacto?: string; pack?: string }
+	params: { slug?: string; empresa?: string; contacto?: string; pack?: string }
 ): string {
 	const base = origin.replace(/\/+$/, '');
+	const slug = params.slug?.trim();
+	if (slug && isSlug(slug)) {
+		const search = new URLSearchParams();
+		search.set('p', slug);
+		return `${base}/empresas?${search.toString()}`;
+	}
+
 	const search = new URLSearchParams();
 	const empresa = sanitizeProspectName(params.empresa, 60);
 	const contacto = sanitizeProspectName(params.contacto, 40);
@@ -652,6 +677,89 @@ export function b2bPackageFromForm(form: FormData): FormResult<B2bPackageInput> 
 			destacado: form.get('destacado') === 'on',
 			activo: form.get('activo') === 'on',
 			orden
+		}
+	};
+}
+
+export type B2bProspectInput = {
+	slug: string;
+	empresa: string;
+	contacto: string | null;
+	whatsapp: string | null;
+	paquete_slug: string | null;
+	nota: string | null;
+	logo_fondo_sugerido: B2bLogoSurface;
+	activo: boolean;
+};
+
+export function b2bProspectFromForm(form: FormData): FormResult<B2bProspectInput> {
+	const empresa = sanitizeProspectName(fieldText(form, 'empresa'), 80);
+	if (!empresa || empresa.length < 2) {
+		return {
+			ok: false,
+			message: 'Escribe el nombre de la empresa o marca (entre 2 y 80 caracteres).'
+		};
+	}
+
+	const rawSlug = fieldText(form, 'slug');
+	const slug = rawSlug ? slugify(rawSlug) : slugify(empresa);
+	if (!slug || !isSlug(slug) || slug.length > 80) {
+		return {
+			ok: false,
+			message: 'No pudimos generar un identificador (slug) válido para esta empresa.'
+		};
+	}
+
+	const contacto = sanitizeProspectName(fieldText(form, 'contacto'), 60);
+
+	const rawPhone = fieldText(form, 'whatsapp');
+	let whatsapp: string | null = null;
+	if (rawPhone) {
+		const normalized = normalizeMxPhone(rawPhone);
+		if (!normalized) {
+			return {
+				ok: false,
+				message: 'El WhatsApp debe tener 10 dígitos válidos en México (o déjalo en blanco).'
+			};
+		}
+		whatsapp = normalized;
+	}
+
+	const rawPack = fieldText(form, 'paquete_slug');
+	let paquete_slug: string | null = null;
+	if (rawPack) {
+		if (!isSlug(rawPack) || rawPack.length > 80) {
+			return { ok: false, message: 'El paquete recomendado seleccionado no es válido.' };
+		}
+		paquete_slug = rawPack;
+	}
+
+	const rawNota = cleanText(fieldText(form, 'nota'), true);
+	if (rawNota.length > 280) {
+		return {
+			ok: false,
+			message: 'La nota personalizada es muy larga (máximo 280 caracteres).'
+		};
+	}
+	const nota = rawNota || null;
+
+	const rawFondo = fieldText(form, 'logo_fondo_sugerido');
+	const logo_fondo_sugerido: B2bLogoSurface = rawFondo === 'light' ? 'light' : 'dark';
+
+	const activoRaw = form.get('activo');
+	const activo = activoRaw === null ? true : activoRaw === 'on' || activoRaw === 'true';
+
+	return {
+		ok: true,
+		value: {
+			slug,
+			empresa,
+			contacto,
+			whatsapp,
+			paquete_slug,
+			nota,
+			logo_fondo_sugerido,
+			activo
 		}
 	};
 }

@@ -132,9 +132,18 @@ export async function placeCustomOrder(
 		.select('cuerpo')
 		.eq('clave', 'encargo_nuevo')
 		.maybeSingle();
+
+	const breakdownText =
+		request.desglose_tallas && request.desglose_tallas.length > 0
+			? `Tallas: ${request.desglose_tallas.map((item) => `${item.cantidad}x ${item.talla}`).join(', ')}`
+			: null;
+
 	const resumen = [
+		request.tipo_producto ? `Producto: ${request.tipo_producto}` : null,
+		request.color ? `Color: ${request.color}` : null,
 		`Tipo: ${type ? type.nombre : 'Encargo especial'}${type?.precio_desde != null ? ` (desde ${formatMoney(type.precio_desde)})` : ''}`,
 		`Cantidad: ${request.cantidad}`,
+		breakdownText,
 		request.fecha_deseada ? `Fecha requerida: ${formatDate(request.fecha_deseada)}` : null,
 		`\nDescripción:\n${request.descripcion}`,
 		paths.length

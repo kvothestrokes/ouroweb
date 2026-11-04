@@ -28,7 +28,7 @@ const ORDER_SELECT = `
 	notas_cliente, subtotal, desc_mayoreo, desc_cupon, personalizacion, envio, total,
 	anticipo_requerido, guia, created_at,
 	order_items(id, product_id, nombre_snapshot, color, talla, cantidad, precio_unitario, recargo_talla, personalizacion_texto),
-	custom_requests(custom_request_type_id, descripcion, cantidad, fecha_deseada, archivos_referencia, precio_final, custom_request_types(nombre, precio_desde)),
+	custom_requests(custom_request_type_id, descripcion, cantidad, fecha_deseada, archivos_referencia, precio_final, tipo_producto, color, desglose_tallas, custom_request_types(nombre, precio_desde)),
 	payments(id, tipo, monto, metodo, fecha),
 	order_events(id, estado, nota, fecha),
 	order_notes(id, texto, fecha),
@@ -223,7 +223,10 @@ export const actions = {
 			p_custom_request_type_id: input.value.custom_request_type_id,
 			p_descripcion: input.value.descripcion,
 			p_cantidad: input.value.cantidad,
-			p_fecha_deseada: input.value.fecha_deseada
+			p_fecha_deseada: input.value.fecha_deseada,
+			p_tipo_producto: input.value.tipo_producto ?? undefined,
+			p_color: input.value.color ?? undefined,
+			p_desglose_tallas: input.value.desglose_tallas ?? []
 		});
 		if (rpcError) return problem(rpcError.message, 'No pudimos actualizar los datos del encargo.');
 		return { success: 'Detalles del encargo actualizados.' };

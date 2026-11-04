@@ -1,4 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
+import sharp from 'sharp';
 import { categoryImageVersion } from '#lib/domain/store-product.js';
 import { renderDesignMockup } from './designs.js';
 import { parseFotoKey, loadWatermarkSource } from './garment-assets.js';
@@ -137,6 +138,28 @@ export async function b2bPhoto(id: string, url: URL): Promise<Buffer> {
 		.maybeSingle();
 	if (!pack?.imagekit_path) error(404, 'No encontrado');
 	return watermarked(pack.imagekit_path, canonicalImageQuery(url, Date.parse(pack.updated_at)));
+}
+
+/**
+ * Preloaded prospect logo configured in `/admin/empresas`.
+ * Served unwatermarked and preserving alpha transparency so the company's own
+ * identity renders authentically on dark/light mockup surfaces.
+ */
+export async function b2bProspectLogo(id: string, url: URL): Promise<Buffer> {
+	const { data: prospect } = await publicDb()
+		.from('b2b_prospects')
+		.select('logo_imagekit_path, updated_at')
+		.eq('id', id)
+		.eq('activo', true)
+		.maybeSingle();
+	if (!prospect?.logo_imagekit_path) error(404, 'No encontrado');
+
+	const width = canonicalImageQuery(url, Date.parse(prospect.updated_at) || 1);
+	const raw = await downloadImage(prospect.logo_imagekit_path);
+	return sharp(raw)
+		.resize({ width, height: width, fit: 'inside', withoutEnlargement: true })
+		.webp({ quality: 90, alphaQuality: 100 })
+		.toBuffer();
 }
 
 /**

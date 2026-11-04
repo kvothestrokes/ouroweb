@@ -2,15 +2,20 @@
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import {
+		Building2,
 		Check,
 		Copy,
 		ExternalLink as ExternalLinkIcon,
 		ImagePlus,
 		MessageSquareShare,
 		PackageCheck,
+		Pencil,
+		Plus,
+		Search,
 		Settings2,
 		Sparkles,
-		Trash2
+		Trash2,
+		Upload
 	} from '@lucide/svelte';
 	import FormMessage from '#lib/components/admin/FormMessage.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -20,7 +25,8 @@
 	import {
 		DEFAULT_OUTBOUND_TEMPLATES,
 		buildProspectingLink,
-		buildProspectingMessage
+		buildProspectingMessage,
+		type B2bLogoSurface
 	} from '#lib/domain/b2b.js';
 	import { formatMoney } from '#lib/domain/money.js';
 	import { normalizeMxPhone } from '#lib/domain/phone.js';
@@ -39,14 +45,37 @@
 	let activeTab = $state<(typeof TABS)[number]['id']>('prospeccion');
 	let busy = $state(false);
 
-	// Outbound Prospecting Generator state
+	// Outbound Prospecting Generator & Saved Prospects state
+	let editingProspectId = $state<string | null>(null);
+	let editingProspectSlug = $state<string | null>(null);
 	let prospectEmpresa = $state('Cafetería Central');
 	let prospectContacto = $state('');
 	let prospectWhatsapp = $state('');
 	let prospectPack = $state('');
 	let prospectNota = $state('');
+	let prospectLogoSurface = $state<B2bLogoSurface>('dark');
+	let existingLogoSrc = $state<string | null>(null);
+	let removeExistingLogo = $state(false);
+	let localLogoPreviewUrl = $state<string | null>(null);
 	let selectedTemplateKey = $state('b2b_prospeccion_frio');
-	let copiedKind = $state<'link' | 'msg' | null>(null);
+	let copiedKind = $state<string | null>(null);
+	let prospectSearch = $state('');
+
+	const activeLogoPreview = $derived(
+		localLogoPreviewUrl ?? (removeExistingLogo ? null : existingLogoSrc)
+	);
+
+	const filteredProspects = $derived.by(() => {
+		const q = prospectSearch.trim().toLowerCase();
+		if (!q) return data.prospects;
+		return data.prospects.filter(
+			(item) =>
+				item.empresa.toLowerCase().includes(q) ||
+				item.slug.toLowerCase().includes(q) ||
+				(item.contacto && item.contacto.toLowerCase().includes(q)) ||
+				(item.whatsapp && item.whatsapp.includes(q))
+		);
+	});
 
 	const activeTemplate = $derived(
 		data.templates.find((t) => t.clave === selectedTemplateKey) ?? DEFAULT_OUTBOUND_TEMPLATES[0]
@@ -54,6 +83,7 @@
 
 	const generatedLink = $derived(
 		buildProspectingLink(data.origin, {
+			slug: editingProspectSlug ?? undefined,
 			empresa: prospectEmpresa,
 			contacto: prospectContacto,
 			pack: prospectPack
@@ -77,7 +107,54 @@
 		data.settings.faqs.map((f) => `${f.pregunta}\n${f.respuesta}`).join('\n\n')
 	);
 
-	async function copyText(value: string, kind: 'link' | 'msg') {
+	function resetProspectForm() {
+		editingProspectId = null;
+		editingProspectSlug = null;
+		prospectEmpresa = '';
+		prospectContacto = '';
+		prospectWhatsapp = '';
+		prospectPack = '';
+		prospectNota = '';
+		prospectLogoSurface = 'dark';
+		existingLogoSrc = null;
+		removeExistingLogo = false;
+		if (localLogoPreviewUrl) {
+			URL.revokeObjectURL(localLogoPreviewUrl);
+			localLogoPreviewUrl = null;
+		}
+	}
+
+	function selectProspectForGenerator(item: (typeof data.prospects)[number]) {
+		editingProspectId = item.id;
+		editingProspectSlug = item.slug;
+		prospectEmpresa = item.empresa;
+		prospectContacto = item.contacto ?? '';
+		prospectWhatsapp = item.whatsapp ? item.whatsapp.replace(/^52/, '') : '';
+		prospectPack = item.paquete_slug ?? '';
+		prospectNota = item.nota ?? '';
+		prospectLogoSurface = item.logo_fondo_sugerido;
+		existingLogoSrc = item.logoSrc;
+		removeExistingLogo = false;
+		if (localLogoPreviewUrl) {
+			URL.revokeObjectURL(localLogoPreviewUrl);
+			localLogoPreviewUrl = null;
+		}
+	}
+
+	function onLogoFileChange(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (localLogoPreviewUrl) {
+			URL.revokeObjectURL(localLogoPreviewUrl);
+			localLogoPreviewUrl = null;
+		}
+		if (file && file.size > 0) {
+			localLogoPreviewUrl = URL.createObjectURL(file);
+			removeExistingLogo = false;
+		}
+	}
+
+	async function copyText(value: string, kind: string) {
 		try {
 			await navigator.clipboard.writeText(value);
 			copiedKind = kind;
@@ -106,6 +183,26 @@
 		return async ({ update }) => {
 			await update();
 			busy = false;
+		};
+	};
+
+	const submitProspect: SubmitFunction = async ({ formData }) => {
+		busy = true;
+		const logo = formData.get('logo');
+		if (logo instanceof File && logo.size > 0) {
+			formData.set('logo', await downscaleImage(logo, 1400, { keepPng: true }));
+		}
+		return async ({ result, update }) => {
+			await update({ reset: false });
+			busy = false;
+			if (result.type === 'success') {
+				const savedSlug =
+					typeof result.data?.savedProspectSlug === 'string' ? result.data.savedProspectSlug : null;
+				if (savedSlug) {
+					const found = data.prospects.find((p) => p.slug === savedSlug);
+					if (found) selectProspectForGenerator(found);
+				}
+			}
 		};
 	};
 
@@ -169,26 +266,66 @@
 	{/each}
 </div>
 
-<!-- TAB 1: Outbound Prospecting Generator -->
+<!-- TAB 1: Outbound Prospecting Generator & Saved Prospects List -->
 {#if activeTab === 'prospeccion'}
-	<div class="mt-6 grid gap-6 xl:grid-cols-[1fr_1.1fr]">
-		<section class="rounded-xl border border-border bg-card p-5 md:p-6">
-			<div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-gold uppercase">
-				<Sparkles size={15} /> Generador de prospección B2B
+	<div class="mt-6 grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+		<form
+			method="POST"
+			action="?/guardarProspecto"
+			enctype="multipart/form-data"
+			use:enhance={submitProspect}
+			class="rounded-xl border border-border bg-card p-5 md:p-6"
+		>
+			{#if editingProspectId}
+				<input type="hidden" name="id" value={editingProspectId} />
+				<input type="hidden" name="slug" value={editingProspectSlug ?? ''} />
+			{/if}
+			{#if removeExistingLogo}
+				<input type="hidden" name="eliminar_logo" value="1" />
+			{/if}
+
+			<div class="flex flex-wrap items-start justify-between gap-3">
+				<div>
+					<div
+						class="flex items-center gap-2 text-xs font-semibold tracking-wider text-gold uppercase"
+					>
+						<Sparkles size={15} />
+						{editingProspectId
+							? 'Editando empresa guardada'
+							: 'Nueva empresa / enlace personalizado'}
+					</div>
+					<h2 class="mt-1 font-display text-xl text-foreground">
+						1. Datos y logotipo precargado de la empresa
+					</h2>
+					<p class="mt-1 text-xs text-muted-foreground">
+						Si precargas el logotipo de la empresa, al abrir su enlace personalizado verá sus
+						mockups hasta arriba con su nombre en grande.
+					</p>
+				</div>
+				{#if editingProspectId || prospectEmpresa}
+					<Button
+						type="button"
+						variant="outline"
+						class="min-h-9 gap-1.5 text-xs"
+						onclick={resetProspectForm}
+					>
+						<Plus size={14} /> Nueva empresa
+					</Button>
+				{/if}
 			</div>
-			<h2 class="mt-1 font-display text-xl text-foreground">1. Datos de la empresa a contactar</h2>
-			<p class="mt-1 text-xs text-muted-foreground">
-				El link generado activará el saludo personalizado en el Hero de <code>/empresas</code> y preseleccionará
-				el paquete elegido.
-			</p>
 
 			<div class="mt-5 grid gap-4 sm:grid-cols-2">
 				<div class="flex flex-col gap-1.5 sm:col-span-2">
-					<Label for="p-empresa">Nombre de la empresa o negocio</Label>
+					<Label for="p-empresa">Nombre de la empresa o negocio *</Label>
 					<Input
 						id="p-empresa"
+						name="empresa"
 						bind:value={prospectEmpresa}
-						maxlength={60}
+						oninput={() => {
+							if (!editingProspectId) editingProspectSlug = null;
+						}}
+						required
+						maxlength={80}
 						placeholder="Ej. Gimnasio Titán, Restaurante El Mirador…"
 						class="min-h-11"
 					/>
@@ -198,8 +335,9 @@
 					<Label for="p-contacto">Nombre del contacto (opcional)</Label>
 					<Input
 						id="p-contacto"
+						name="contacto"
 						bind:value={prospectContacto}
-						maxlength={40}
+						maxlength={60}
 						placeholder="Ej. Sofía"
 						class="min-h-11"
 					/>
@@ -209,6 +347,7 @@
 					<Label for="p-wa">WhatsApp de la empresa (10 dígitos, opc.)</Label>
 					<Input
 						id="p-wa"
+						name="whatsapp"
 						bind:value={prospectWhatsapp}
 						maxlength={20}
 						inputmode="numeric"
@@ -219,7 +358,7 @@
 
 				<div class="flex flex-col gap-1.5 sm:col-span-2">
 					<Label for="p-pack">Paquete recomendado para destacar</Label>
-					<select id="p-pack" bind:value={prospectPack} class={selectClass}>
+					<select id="p-pack" name="paquete_slug" bind:value={prospectPack} class={selectClass}>
 						<option value="">Mostrar todos (primer paquete por defecto)</option>
 						{#each data.packages as pack (pack.id)}
 							<option value={pack.slug}>{pack.nombre} ({formatMoney(pack.precio_desde)})</option>
@@ -231,29 +370,143 @@
 					<Label for="p-nota">Rompehielo o nota personalizada (opcional)</Label>
 					<Input
 						id="p-nota"
+						name="nota"
 						bind:value={prospectNota}
-						maxlength={180}
+						maxlength={280}
 						placeholder="Ej. Vimos que están por inaugurar su nueva sucursal en el centro."
 						class="min-h-11"
 					/>
 				</div>
 
-				<div class="flex flex-col gap-1.5 sm:col-span-2">
-					<Label for="p-tpl">Tipo de mensaje</Label>
-					<select id="p-tpl" bind:value={selectedTemplateKey} class={selectClass}>
-						{#each data.templates.filter((t) => t.clave !== 'b2b_cotizacion_nueva') as tpl (tpl.clave)}
-							<option value={tpl.clave}>{tpl.nombre}</option>
-						{/each}
-					</select>
+				<!-- Logo Preloader & Mockup Surface Selector -->
+				<div class="rounded-xl border border-gold/30 bg-surface p-4 sm:col-span-2">
+					<div class="flex flex-wrap items-start justify-between gap-3">
+						<div>
+							<p class="text-xs font-semibold tracking-wider text-gold uppercase">
+								Precargar logotipo para mockups instantáneos (opcional)
+							</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">
+								Sube el logo en PNG transparente, WebP o JPG. Al entrar al link, la empresa verá sus
+								mockups hasta arriba.
+							</p>
+						</div>
+						<label
+							for="p-logo-file"
+							class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3.5 text-xs font-semibold text-foreground transition-colors hover:border-gold"
+						>
+							<Upload size={14} class="text-gold" />
+							{activeLogoPreview ? 'Cambiar logotipo' : 'Subir logotipo'}
+						</label>
+						<input
+							id="p-logo-file"
+							name="logo"
+							type="file"
+							accept="image/png,image/webp,image/jpeg"
+							onchange={onLogoFileChange}
+							class="sr-only"
+						/>
+					</div>
+
+					<div class="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+						<div class="flex flex-col gap-1.5">
+							<Label for="p-fondo" class="text-xs">Superficie inicial sugerida en el mockup</Label>
+							<select
+								id="p-fondo"
+								name="logo_fondo_sugerido"
+								bind:value={prospectLogoSurface}
+								class={selectClass}
+							>
+								<option value="dark">Prenda / Termo oscuro (para logos claros o a color)</option>
+								<option value="light">Prenda / Taza clara (para logos oscuros)</option>
+							</select>
+						</div>
+
+						{#if activeLogoPreview}
+							<div class="flex items-end">
+								<Button
+									type="button"
+									variant="outline"
+									class="min-h-11 gap-1.5 text-xs text-danger"
+									onclick={() => {
+										removeExistingLogo = true;
+										if (localLogoPreviewUrl) {
+											URL.revokeObjectURL(localLogoPreviewUrl);
+											localLogoPreviewUrl = null;
+										}
+									}}
+								>
+									<Trash2 size={14} /> Quitar logo
+								</Button>
+							</div>
+						{/if}
+					</div>
+
+					{#if activeLogoPreview}
+						<div class="mt-4 grid grid-cols-2 gap-3">
+							<div
+								class="dark flex flex-col items-center justify-center rounded-lg border border-border bg-background p-3 text-center {prospectLogoSurface ===
+								'dark'
+									? 'ring-2 ring-gold'
+									: ''}"
+							>
+								<img
+									src={activeLogoPreview}
+									alt="Vista previa en oscuro"
+									class="h-14 max-w-[140px] object-contain"
+								/>
+								<span class="mt-2 text-[10px] text-muted-foreground">
+									Vista en prenda / termo oscuro
+								</span>
+							</div>
+							<div
+								class="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-3 text-center {prospectLogoSurface ===
+								'light'
+									? 'ring-2 ring-gold'
+									: ''}"
+							>
+								<img
+									src={activeLogoPreview}
+									alt="Vista previa en claro"
+									class="h-14 max-w-[140px] object-contain"
+								/>
+								<span class="mt-2 text-[10px] text-muted-foreground">
+									Vista en prenda / taza clara
+								</span>
+							</div>
+						</div>
+					{/if}
 				</div>
 			</div>
-		</section>
+
+			<div
+				class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"
+			>
+				<p class="text-xs text-muted-foreground">
+					Guarda la empresa en tu lista para conservar su link corto <code>?p=slug</code> y su logotipo.
+				</p>
+				<Button type="submit" disabled={busy} class="min-h-11 gap-2">
+					<Check size={16} />
+					{editingProspectId ? 'Actualizar empresa y enlace' : 'Guardar en lista de empresas'}
+				</Button>
+			</div>
+		</form>
 
 		<section
 			class="flex flex-col justify-between gap-5 rounded-xl border border-border bg-card p-5 md:p-6"
 		>
 			<div>
-				<h2 class="font-display text-xl text-foreground">2. Enlace y mensaje listos para enviar</h2>
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<h2 class="font-display text-xl text-foreground">
+						2. Enlace y mensaje listos para enviar
+					</h2>
+					{#if editingProspectSlug}
+						<span
+							class="rounded-full bg-gold-fill/15 px-2.5 py-1 text-[11px] font-semibold text-gold"
+						>
+							{activeLogoPreview ? 'Con mockups arriba activos' : 'Enlace corto guardado'}
+						</span>
+					{/if}
+				</div>
 
 				<!-- Personalized URL box -->
 				<div class="mt-4 rounded-lg border border-border bg-surface p-3.5">
@@ -287,13 +540,22 @@
 					</div>
 				</div>
 
+				<div class="mt-4 flex flex-col gap-1.5">
+					<Label for="p-tpl">Plantilla de WhatsApp</Label>
+					<select id="p-tpl" bind:value={selectedTemplateKey} class={selectClass}>
+						{#each data.templates.filter((t) => t.clave !== 'b2b_cotizacion_nueva') as tpl (tpl.clave)}
+							<option value={tpl.clave}>{tpl.nombre}</option>
+						{/each}
+					</select>
+				</div>
+
 				<!-- Generated WhatsApp message preview -->
 				<div class="mt-4">
 					<p class="mb-1.5 text-xs font-medium text-muted-foreground">
 						Vista previa del mensaje de WhatsApp
 					</p>
 					<pre
-						class="max-h-72 overflow-y-auto rounded-lg border border-border bg-surface p-4 font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground">{generatedMessage}</pre>
+						class="max-h-64 overflow-y-auto rounded-lg border border-border bg-surface p-4 font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground">{generatedMessage}</pre>
 				</div>
 			</div>
 
@@ -324,12 +586,194 @@
 					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				{:else}
 					<span class="text-xs text-muted-foreground">
-						Escribe el WhatsApp a 10 dígitos arriba para abrir el chat directo en 1 clic.
+						Escribe el WhatsApp a 10 dígitos para abrir el chat directo en 1 clic.
 					</span>
 				{/if}
 			</div>
 		</section>
 	</div>
+
+	<!-- Saved Prospects List -->
+	<section class="mt-6 rounded-xl border border-border bg-card p-5 md:p-6">
+		<div class="flex flex-wrap items-center justify-between gap-4">
+			<div>
+				<div
+					class="flex items-center gap-2 text-xs font-semibold tracking-wider text-gold uppercase"
+				>
+					<Building2 size={15} /> Directorio de prospección B2B
+				</div>
+				<h2 class="mt-1 font-display text-xl text-foreground">
+					3. Lista de empresas y enlaces personalizados ({data.prospects.length})
+				</h2>
+				<p class="text-xs text-muted-foreground">
+					Administra las empresas prospectadas, verifica cuáles tienen logotipo precargado para ver
+					sus mockups hasta arriba y copia su enlace en 1 clic.
+				</p>
+			</div>
+
+			{#if data.prospects.length > 0}
+				<div class="relative w-full sm:w-72">
+					<Search
+						size={16}
+						class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+					/>
+					<Input
+						type="search"
+						bind:value={prospectSearch}
+						placeholder="Buscar empresa, contacto o tel…"
+						class="min-h-10 pl-9 text-xs"
+					/>
+				</div>
+			{/if}
+		</div>
+
+		{#if data.prospects.length === 0}
+			<div
+				class="mt-5 rounded-xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground"
+			>
+				Aún no has guardado empresas en tu lista. Usa el formulario de arriba para registrar una
+				empresa y precargar su logotipo.
+			</div>
+		{:else if filteredProspects.length === 0}
+			<p class="mt-5 text-sm text-muted-foreground">
+				No encontramos empresas que coincidan con «{prospectSearch}».
+			</p>
+		{:else}
+			<div class="mt-5 grid gap-3">
+				{#each filteredProspects as item (item.id)}
+					{@const itemLink = buildProspectingLink(data.origin, {
+						slug: item.slug,
+						empresa: item.empresa,
+						contacto: item.contacto ?? undefined,
+						pack: item.paquete_slug ?? undefined
+					})}
+					{@const itemPack = data.packages.find((p) => p.slug === item.paquete_slug)}
+					{@const isSelected = editingProspectId === item.id}
+					<div
+						class="flex flex-col justify-between gap-4 rounded-xl border p-4 transition-colors lg:flex-row lg:items-center {isSelected
+							? 'border-gold bg-surface-raised/60'
+							: 'border-border bg-surface hover:border-gold/50'}"
+					>
+						<div class="flex items-start gap-3.5">
+							{#if item.logoSrc}
+								<div
+									class="flex size-14 shrink-0 items-center justify-center rounded-lg border border-border p-1.5 {item.logo_fondo_sugerido ===
+									'dark'
+										? 'dark bg-background'
+										: 'bg-card'}"
+								>
+									<img
+										src={item.logoSrc}
+										alt={item.empresa}
+										class="max-h-full max-w-full object-contain"
+									/>
+								</div>
+							{:else}
+								<div
+									class="grid size-14 shrink-0 place-items-center rounded-lg border border-dashed border-border bg-card font-display text-base font-bold text-muted-foreground"
+								>
+									{item.empresa.slice(0, 2).toUpperCase()}
+								</div>
+							{/if}
+
+							<div class="min-w-0">
+								<div class="flex flex-wrap items-center gap-2">
+									<h3 class="font-display text-base font-bold text-foreground">
+										{item.empresa}
+									</h3>
+									{#if item.logoSrc}
+										<span
+											class="rounded-full bg-gold-fill/20 px-2.5 py-0.5 text-[11px] font-semibold text-gold"
+										>
+											Logo y mockups precargados
+										</span>
+									{:else}
+										<span
+											class="rounded-full border border-border px-2.5 py-0.5 text-[11px] text-muted-foreground"
+										>
+											Sin logo precargado
+										</span>
+									{/if}
+									{#if itemPack}
+										<span
+											class="rounded-full bg-accent/20 px-2.5 py-0.5 text-[11px] font-medium text-purple-light"
+										>
+											{itemPack.nombre}
+										</span>
+									{/if}
+								</div>
+
+								<p class="mt-1 text-xs text-muted-foreground">
+									{#if item.contacto}
+										Contacto: <strong class="text-foreground">{item.contacto}</strong> ·
+									{/if}
+									{#if item.whatsapp}
+										Tel: <span class="font-mono">{item.whatsapp.replace(/^52/, '')}</span> ·
+									{/if}
+									<span class="font-mono text-gold">/empresas?p={item.slug}</span>
+								</p>
+
+								{#if item.nota}
+									<p class="mt-1 line-clamp-1 text-xs text-muted-foreground italic">
+										«{item.nota}»
+									</p>
+								{/if}
+							</div>
+						</div>
+
+						<div class="flex flex-wrap items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								class="min-h-9 gap-1.5 text-xs"
+								onclick={() => copyText(itemLink, `row-${item.id}`)}
+							>
+								{#if copiedKind === `row-${item.id}`}
+									<Check size={14} class="text-success" /> Copiado
+								{:else}
+									<Copy size={14} /> Copiar link
+								{/if}
+							</Button>
+
+							<!-- eslint-disable svelte/no-navigation-without-resolve -->
+							<a
+								href={itemLink}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:border-gold"
+							>
+								Ver landing <ExternalLinkIcon size={13} class="text-gold" />
+							</a>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
+
+							<Button
+								type="button"
+								variant="outline"
+								class="min-h-9 gap-1.5 text-xs"
+								onclick={() => selectProspectForGenerator(item)}
+							>
+								<Pencil size={14} />
+								{item.logoSrc ? 'Editar / WA' : 'Subir logo / Editar'}
+							</Button>
+
+							<form method="POST" action="?/eliminarProspecto" use:enhance={submitPlain}>
+								<input type="hidden" name="id" value={item.id} />
+								<Button
+									type="submit"
+									variant="outline"
+									disabled={busy}
+									aria-label="Eliminar {item.empresa}"
+									class="min-h-9 px-2.5 text-danger"
+								>
+									<Trash2 size={14} />
+								</Button>
+							</form>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</section>
 {/if}
 
 <!-- TAB 2: Corporate Packages CRUD -->

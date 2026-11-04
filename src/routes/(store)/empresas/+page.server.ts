@@ -1,26 +1,24 @@
 import { fail } from '@sveltejs/kit';
-import { b2bQuoteFromForm, sanitizeProspectName } from '#lib/domain/b2b.js';
-import { isSlug } from '#lib/domain/slug.js';
-import { loadB2bPublicData, placeB2bQuoteOrder } from '#lib/server/b2b.js';
+import { b2bQuoteFromForm } from '#lib/domain/b2b.js';
+import {
+	loadB2bPublicData,
+	placeB2bQuoteOrder,
+	resolvePublicB2bProspect
+} from '#lib/server/b2b.js';
 import { allowDurable } from '#lib/server/durable-rate-limit.js';
 import { allowRequest } from '#lib/server/rate-limit.js';
 import { storeData } from '#lib/server/store.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
-	const b2b = await storeData(loadB2bPublicData);
-	const prospectEmpresa = sanitizeProspectName(url.searchParams.get('para'), 60);
-	const prospectContacto = sanitizeProspectName(url.searchParams.get('contacto'), 40);
-	const rawPack = url.searchParams.get('pack')?.trim() ?? '';
-	const selectedPackSlug = rawPack && isSlug(rawPack) ? rawPack : null;
+	const [b2b, prospect] = await Promise.all([
+		storeData(loadB2bPublicData),
+		resolvePublicB2bProspect(url)
+	]);
 
 	return {
 		...b2b,
-		prospect: {
-			empresa: prospectEmpresa,
-			contacto: prospectContacto,
-			packSlug: selectedPackSlug
-		}
+		prospect
 	};
 };
 
@@ -44,8 +42,9 @@ export const actions = {
 		const files = form
 			.getAll('referencias')
 			.filter((value): value is File => value instanceof File && value.size > 0);
+		const prospectSlug = String(form.get('prospect_slug') ?? '').trim() || null;
 
-		const result = await placeB2bQuoteOrder(parsed.value, files);
+		const result = await placeB2bQuoteOrder(parsed.value, files, prospectSlug);
 		if (!result.ok) return fail(result.status, { message: result.message });
 		return { placed: result.order, empresa: parsed.value.empresa };
 	}

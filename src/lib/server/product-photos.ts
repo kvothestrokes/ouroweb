@@ -45,6 +45,52 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
 	return { ok: true, bytes };
 }
 
+const MIN_LOGO_WIDTH = 80;
+const MAX_LOGO_DIMENSION = 1200;
+
+/**
+ * Validates a company logo (PNG, WebP, or JPG) and normalizes it to WebP
+ * preserving alpha transparency for dark/light mockup surfaces.
+ */
+export async function prepareLogoPhoto(file: File): Promise<PreparedPhoto> {
+	if (file.size === 0)
+		return { ok: false, message: 'El archivo del logotipo debe ser PNG, WebP o JPG.' };
+	if (file.size > MAX_UPLOAD_BYTES) return { ok: false, message: 'El logotipo pesa más de 15 MB.' };
+	const input = Buffer.from(await file.arrayBuffer());
+	const open = () => sharp(input, { limitInputPixels: MAX_INPUT_PIXELS });
+
+	let meta: Metadata;
+	try {
+		meta = await open().metadata();
+	} catch {
+		return { ok: false, message: 'El archivo del logotipo debe ser PNG, WebP o JPG.' };
+	}
+	if (!meta.format || !FORMATS.has(meta.format) || !meta.width) {
+		return { ok: false, message: 'El archivo del logotipo debe ser PNG, WebP o JPG.' };
+	}
+	if (meta.width * (meta.height ?? 0) > MAX_INPUT_PIXELS) {
+		return { ok: false, message: 'La imagen es demasiado grande (máximo 40 megapíxeles).' };
+	}
+	if (meta.width < MIN_LOGO_WIDTH) {
+		return {
+			ok: false,
+			message: `El logotipo es muy pequeño: súbelo de al menos ${MIN_LOGO_WIDTH} px de ancho.`
+		};
+	}
+
+	const bytes = await open()
+		.rotate()
+		.resize({
+			width: MAX_LOGO_DIMENSION,
+			height: MAX_LOGO_DIMENSION,
+			fit: 'inside',
+			withoutEnlargement: true
+		})
+		.webp({ quality: 90, alphaQuality: 100 })
+		.toBuffer();
+	return { ok: true, bytes };
+}
+
 /** Validates and uploads a product photo to the `products` folder; returns its path. */
 export async function storeProductPhoto(
 	file: File

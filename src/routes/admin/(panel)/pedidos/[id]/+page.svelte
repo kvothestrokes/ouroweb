@@ -25,7 +25,8 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { DELIVERY_METHODS, deliveryLabel, type DeliveryMethod } from '#lib/domain/checkout.js';
 	import { centsToInput, formatMoney, parseMoney } from '#lib/domain/money.js';
-	import { PAYMENT_TYPES, type PaymentType } from '#lib/domain/order-admin.js';
+	import { PAYMENT_METHODS, PAYMENT_TYPES, type PaymentType } from '#lib/domain/order-admin.js';
+	import { inferPaymentType } from '#lib/domain/order-money.js';
 	import { STATUS_LABELS } from '#lib/domain/order-status.js';
 	import type { PageProps } from './$types';
 
@@ -63,14 +64,35 @@
 
 	// Quote & Payment quick-fill state
 	let quoteAnticipoInput = $state('');
+	let quoteAnticipoManual = $state(false);
+
 	let paymentTipo = $state<PaymentType>('anticipo');
 	let paymentMonto = $state('');
+	let paymentMetodo = $state('Transferencia');
+	let paymentMetodoOtro = $state('');
+	let paymentTipoManual = $state(false);
+	let showCustomFecha = $state(false);
+	let paymentFecha = $state('');
 
 	$effect(() => {
-		quoteAnticipoInput = centsToInput(order.anticipo_requerido);
-		paymentTipo = order.payments.length ? 'abono' : 'anticipo';
-		paymentMonto = '';
+		if (!quoteAnticipoManual) {
+			quoteAnticipoInput = centsToInput(order.anticipo_requerido ?? data.suggestedDeposit);
+		}
 	});
+
+	function updatePaymentTypeForAmount(montoInput: string) {
+		paymentMonto = montoInput;
+		if (!paymentTipoManual) {
+			const cents = parseMoney(montoInput) ?? 0;
+			paymentTipo = inferPaymentType({
+				monto: cents,
+				saldo: data.balance.saldo,
+				pagado: data.balance.pagado,
+				anticipoRequerido: order.anticipo_requerido,
+				hasAnticipo: order.payments.some((p) => p.tipo === 'anticipo')
+			});
+		}
+	}
 
 	function openItemsEditor() {
 		draftLines = order.order_items.map((item) => ({
@@ -395,6 +417,34 @@
 							/>
 						</div>
 
+						<div class="flex flex-col gap-2">
+							<Label for="edit-req-product">Producto / Prenda (opcional)</Label>
+							<Input
+								id="edit-req-product"
+								name="tipo_producto"
+								value={data.request.tipo_producto ?? ''}
+								placeholder="Ej. Playera, Sudadera, Termo..."
+								class="min-h-11"
+							/>
+						</div>
+
+						<div class="flex flex-col gap-2">
+							<Label for="edit-req-color">Color (opcional)</Label>
+							<Input
+								id="edit-req-color"
+								name="color"
+								value={data.request.color ?? ''}
+								placeholder="Ej. Negro, Blanco..."
+								class="min-h-11"
+							/>
+						</div>
+
+						<input
+							type="hidden"
+							name="desglose_tallas"
+							value={JSON.stringify(data.request.desglose_tallas ?? [])}
+						/>
+
 						<div class="flex flex-col gap-2 sm:col-span-2">
 							<Label for="edit-req-date">Fecha deseada (opcional)</Label>
 							<Input
@@ -435,6 +485,37 @@
 							· para el {date.format(new Date(`${data.request.fecha_deseada}T00:00:00Z`))}
 						{/if}
 					</p>
+
+					{#if data.request.tipo_producto || data.request.color || (Array.isArray(data.request.desglose_tallas) && data.request.desglose_tallas.length)}
+						<div class="mt-2.5 flex flex-wrap gap-2 text-xs">
+							{#if data.request.tipo_producto}
+								<span
+									class="rounded-md border border-border bg-surface-raised px-2.5 py-1 font-semibold text-foreground"
+								>
+									{data.request.tipo_producto}
+								</span>
+							{/if}
+							{#if data.request.color}
+								<span
+									class="rounded-md border border-border bg-surface-raised px-2.5 py-1 text-foreground"
+								>
+									Color: <strong>{data.request.color}</strong>
+								</span>
+							{/if}
+							{#if Array.isArray(data.request.desglose_tallas) && data.request.desglose_tallas.length}
+								<span
+									class="rounded-md border border-gold/40 bg-gold-fill/10 px-2.5 py-1 font-medium text-foreground"
+								>
+									Tallas: {(
+										data.request.desglose_tallas as Array<{ talla: string; cantidad: number }>
+									)
+										.map((item) => `${item.cantidad}x ${item.talla}`)
+										.join(', ')}
+								</span>
+							{/if}
+						</div>
+					{/if}
+
 					<p class="mt-3 text-sm whitespace-pre-line text-foreground">{data.request.descripcion}</p>
 				{/if}
 
@@ -691,6 +772,30 @@
 							class="min-h-11 tabular-nums"
 						/>
 					</div>
+				{:else}
+					<div class="flex flex-col gap-2">
+						<div class="flex items-center justify-between gap-2">
+							<Label for="precio_final">Precio de partidas / Subtotal (MXN)</Label>
+							<span class="text-xs text-muted-foreground">
+								Suma: {formatMoney(
+									order.order_items.reduce(
+										(sum, item) =>
+											sum + (item.precio_unitario + item.recargo_talla) * item.cantidad,
+										0
+									)
+								)}
+							</span>
+						</div>
+						<Input
+							id="precio_final"
+							name="precio_final"
+							inputmode="decimal"
+							value={centsToInput(order.subtotal)}
+							placeholder="Por cotizar"
+							disabled={closed}
+							class="min-h-11 tabular-nums"
+						/>
+					</div>
 				{/if}
 				<div class="flex flex-col gap-2">
 					<Label for="envio">Envío (MXN)</Label>
@@ -749,7 +854,10 @@
 							<button
 								type="button"
 								class="inline-flex items-center gap-1 text-xs text-gold hover:underline"
-								onclick={() => (quoteAnticipoInput = centsToInput(data.suggestedDeposit))}
+								onclick={() => {
+									quoteAnticipoInput = centsToInput(data.suggestedDeposit);
+									quoteAnticipoManual = false;
+								}}
 							>
 								<Sparkles size={13} strokeWidth={1.75} aria-hidden="true" />
 								Usar sugerido ({formatMoney(data.suggestedDeposit)})
@@ -761,6 +869,7 @@
 						name="anticipo"
 						inputmode="decimal"
 						bind:value={quoteAnticipoInput}
+						oninput={() => (quoteAnticipoManual = true)}
 						placeholder="Sugerido: {centsToInput(data.suggestedDeposit)}"
 						disabled={closed}
 						class="min-h-11 tabular-nums"
@@ -860,8 +969,8 @@
 								type="button"
 								class="rounded-md border border-border bg-surface-raised px-2.5 py-1 text-xs text-foreground hover:border-gold"
 								onclick={() => {
-									paymentTipo = 'anticipo';
-									paymentMonto = centsToInput(order.anticipo_requerido);
+									paymentTipoManual = false;
+									updatePaymentTypeForAmount(centsToInput(order.anticipo_requerido));
 								}}
 							>
 								Anticipo requerido ({formatMoney(order.anticipo_requerido)})
@@ -871,8 +980,8 @@
 								type="button"
 								class="rounded-md border border-border bg-surface-raised px-2.5 py-1 text-xs text-foreground hover:border-gold"
 								onclick={() => {
-									paymentTipo = 'anticipo';
-									paymentMonto = centsToInput(data.suggestedDeposit);
+									paymentTipoManual = false;
+									updatePaymentTypeForAmount(centsToInput(data.suggestedDeposit));
 								}}
 							>
 								50% sugerido ({formatMoney(data.suggestedDeposit)})
@@ -882,10 +991,8 @@
 							type="button"
 							class="rounded-md border border-border bg-surface-raised px-2.5 py-1 text-xs text-foreground hover:border-gold"
 							onclick={() => {
-								paymentTipo = order.payments.some((p) => p.tipo === 'anticipo')
-									? 'liquidacion'
-									: 'anticipo';
-								paymentMonto = centsToInput(data.balance.saldo);
+								paymentTipoManual = false;
+								updatePaymentTypeForAmount(centsToInput(data.balance.saldo));
 							}}
 						>
 							Liquidar saldo ({formatMoney(data.balance.saldo)})
@@ -893,12 +1000,18 @@
 					</div>
 
 					<div class="flex flex-col gap-2">
-						<Label for="tipo">Tipo</Label>
+						<div class="flex items-center justify-between gap-2">
+							<Label for="tipo">Tipo</Label>
+							{#if !paymentTipoManual}
+								<span class="text-[11px] text-muted-foreground">Auto por monto</span>
+							{/if}
+						</div>
 						<select
 							id="tipo"
 							name="tipo"
 							bind:value={paymentTipo}
-							class="min-h-11 rounded-md border border-border bg-transparent px-3 text-sm"
+							onchange={() => (paymentTipoManual = true)}
+							class="min-h-11 rounded-md border border-border bg-transparent px-3 text-sm text-foreground"
 						>
 							{#each PAYMENT_TYPES as type (type.value)}
 								<option value={type.value}>
@@ -914,7 +1027,8 @@
 							name="monto"
 							inputmode="decimal"
 							required
-							bind:value={paymentMonto}
+							value={paymentMonto}
+							oninput={(e) => updatePaymentTypeForAmount(e.currentTarget.value)}
 							placeholder={centsToInput(
 								order.payments.length
 									? data.balance.saldo
@@ -925,25 +1039,65 @@
 					</div>
 					<div class="flex flex-col gap-2">
 						<Label for="metodo">Método</Label>
-						<Input
+						<select
 							id="metodo"
 							name="metodo"
-							maxlength={60}
-							placeholder="Transferencia"
-							class="min-h-11"
-						/>
+							bind:value={paymentMetodo}
+							class="min-h-11 rounded-md border border-border bg-transparent px-3 text-sm text-foreground"
+						>
+							{#each PAYMENT_METHODS as method (method)}
+								<option value={method}>{method}</option>
+							{/each}
+						</select>
+						{#if paymentMetodo === 'Otro'}
+							<Input
+								id="metodo_otro"
+								name="metodo_otro"
+								bind:value={paymentMetodoOtro}
+								maxlength={60}
+								placeholder="Especifica el método…"
+								class="mt-1 min-h-11"
+							/>
+						{/if}
 					</div>
-					<div class="flex flex-col gap-2">
-						<Label for="fecha">Fecha</Label>
-						<Input
-							id="fecha"
+					<div class="flex flex-col justify-end gap-1">
+						<input
+							type="hidden"
 							name="fecha"
-							type="date"
-							value={today}
-							max={today}
-							class="min-h-11 [color-scheme:dark]"
+							value={showCustomFecha && paymentFecha ? paymentFecha : today}
 						/>
+						<div
+							class="flex min-h-11 items-center justify-between rounded-md border border-border/60 bg-surface-raised/40 px-3 text-xs text-muted-foreground"
+						>
+							<span
+								>Fecha: <strong class="font-medium text-foreground"
+									>{showCustomFecha && paymentFecha ? paymentFecha : `Hoy (${today})`}</strong
+								></span
+							>
+							<button
+								type="button"
+								class="text-gold hover:underline"
+								onclick={() => {
+									showCustomFecha = !showCustomFecha;
+									if (showCustomFecha && !paymentFecha) paymentFecha = today;
+								}}
+							>
+								{showCustomFecha ? 'Usar hoy' : 'Cambiar fecha'}
+							</button>
+						</div>
 					</div>
+					{#if showCustomFecha}
+						<div class="flex flex-col gap-2 sm:col-span-2">
+							<Label for="fecha_picker">Fecha específica del pago</Label>
+							<Input
+								id="fecha_picker"
+								type="date"
+								bind:value={paymentFecha}
+								max={today}
+								class="min-h-11 [color-scheme:dark]"
+							/>
+						</div>
+					{/if}
 					<Button type="submit" variant="outline" class="min-h-11 sm:col-span-2" disabled={busy}>
 						Registrar pago
 					</Button>

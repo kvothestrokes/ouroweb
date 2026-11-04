@@ -7,6 +7,7 @@ import {
 	type Address,
 	type DeliveryMethod
 } from './checkout.js';
+import { parseSizeBreakdown, type SizeBreakdownItem } from './custom-request.js';
 import { formatMoney, parseMoney } from './money.js';
 import { STATUSES, type OrderStatus } from './order-status.js';
 import { summaryLine } from './whatsapp.js';
@@ -26,7 +27,7 @@ export type QuoteInput = {
 const QUOTE_FIELDS = [
 	['envio', 'el costo de envío'],
 	['personalizacion', 'el costo de personalización'],
-	['precio_final', 'el precio del encargo'],
+	['precio_final', 'el precio'],
 	['anticipo', 'el anticipo']
 ] as const;
 
@@ -64,6 +65,17 @@ export const PAYMENT_TYPES = [
 
 export type PaymentType = (typeof PAYMENT_TYPES)[number]['value'];
 
+export const PAYMENT_METHODS = [
+	'Transferencia',
+	'Efectivo',
+	'Tarjeta',
+	'Depósito en efectivo',
+	'OXXO',
+	'Otro'
+] as const;
+
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
 export type PaymentInput = {
 	tipo: PaymentType;
 	monto: number;
@@ -89,12 +101,18 @@ export function paymentFromForm(form: FormData): FormResult<PaymentInput> {
 	if (fecha && (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || Number.isNaN(Date.parse(fecha)))) {
 		return { ok: false, message: 'Revisa la fecha del pago.' };
 	}
+	const rawMetodo = text(form, 'metodo');
+	const metodoOtro = text(form, 'metodo_otro');
+	const metodo = (
+		rawMetodo === 'Otro' && metodoOtro ? metodoOtro : rawMetodo || 'Transferencia'
+	).slice(0, 60);
+
 	return {
 		ok: true,
 		value: {
 			tipo: tipo as PaymentType,
 			monto,
-			metodo: text(form, 'metodo').slice(0, 60),
+			metodo,
 			// Noon UTC keeps the same calendar day in Mexico.
 			fecha: fecha ? new Date(`${fecha}T12:00:00Z`).toISOString() : null
 		}
@@ -273,6 +291,9 @@ export type AdminCustomRequestInput = {
 	cantidad: number;
 	fecha_deseada: string | null;
 	precio_final: number | null;
+	tipo_producto?: string | null;
+	color?: string | null;
+	desglose_tallas?: SizeBreakdownItem[];
 };
 
 export function adminCustomRequestFromForm(form: FormData): FormResult<AdminCustomRequestInput> {
@@ -289,7 +310,18 @@ export function adminCustomRequestFromForm(form: FormData): FormResult<AdminCust
 		return { ok: false, message: 'La descripción es muy larga (máximo 1000 caracteres).' };
 	}
 
-	const cantidad = Number(text(form, 'cantidad') || '1');
+	const tipoProducto = cleanText(text(form, 'tipo_producto'), false) || null;
+	const color = cleanText(text(form, 'color'), false) || null;
+	const desgloseTallas = parseSizeBreakdown(form.get('desglose_tallas'));
+
+	let cantidad = Number(text(form, 'cantidad') || '1');
+	if (desgloseTallas.length > 0) {
+		const totalPieces = desgloseTallas.reduce((sum, item) => sum + item.cantidad, 0);
+		if (totalPieces > 0) {
+			cantidad = totalPieces;
+		}
+	}
+
 	if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 999) {
 		return { ok: false, message: 'La cantidad del encargo debe ser de 1 a 999 piezas.' };
 	}
@@ -311,7 +343,10 @@ export function adminCustomRequestFromForm(form: FormData): FormResult<AdminCust
 			descripcion,
 			cantidad,
 			fecha_deseada: fecha || null,
-			precio_final: precioFinal
+			precio_final: precioFinal,
+			tipo_producto: tipoProducto,
+			color,
+			desglose_tallas: desgloseTallas
 		}
 	};
 }
@@ -415,10 +450,15 @@ export function manualOrderFromForm(form: FormData): FormResult<ManualOrderInput
 		if (!PAYMENT_TYPES.some((option) => option.value === pagoTipo)) {
 			return { ok: false, message: 'Elige el tipo del pago inicial.' };
 		}
+		const rawMetodo = text(form, 'pago_inicial_metodo');
+		const metodoOtro = text(form, 'pago_inicial_metodo_otro');
+		const metodo =
+			cleanText(rawMetodo === 'Otro' && metodoOtro ? metodoOtro : rawMetodo).slice(0, 60) ||
+			'Transferencia';
 		initialPayment = {
 			tipo: pagoTipo,
 			monto: pagoMonto,
-			metodo: cleanText(text(form, 'pago_inicial_metodo')).slice(0, 60) || 'Transferencia'
+			metodo
 		};
 	}
 

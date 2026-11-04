@@ -101,6 +101,35 @@ export async function loadCustomRequestTypes(): Promise<StoreRequestType[]> {
 	);
 }
 
+export type StoreGarmentOption = {
+	id: string;
+	nombre: string;
+	tallas: string[];
+	colores: { nombre: string; hex: string }[];
+};
+
+export async function loadGarmentOptions(): Promise<StoreGarmentOption[]> {
+	const [typesRes, basesRes] = await Promise.all([
+		db.from('garment_types').select('id, nombre, tallas').order('nombre'),
+		db
+			.from('garment_bases')
+			.select('garment_type_id, color_nombre, color_hex')
+			.order('color_nombre')
+	]);
+	const types = unwrap(typesRes);
+	const bases = unwrap(basesRes);
+
+	return types.map((t) => {
+		const matchingBases = bases.filter((b) => b.garment_type_id === t.id);
+		return {
+			id: t.id,
+			nombre: t.nombre,
+			tallas: t.tallas ?? [],
+			colores: matchingBases.map((b) => ({ nombre: b.color_nombre, hex: b.color_hex }))
+		};
+	});
+}
+
 export type StoreReview = {
 	id: string;
 	calificacion: number;

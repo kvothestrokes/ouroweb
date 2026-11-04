@@ -17,6 +17,7 @@
 	import { DELIVERY_METHODS, type DeliveryMethod } from '#lib/domain/checkout.js';
 	import { centsToInput, formatMoney, parseMoney } from '#lib/domain/money.js';
 	import {
+		PAYMENT_METHODS,
 		PAYMENT_TYPES,
 		type PaymentType,
 		type RecurringCustomer
@@ -77,6 +78,7 @@
 	let encargoCantidad = $state(1);
 	let encargoFechaDeseada = $state('');
 	let encargoPrecioFinal = $state('');
+	let encargoPrecioFinalManual = $state(false);
 
 	// Financial & Initial payment state
 	let descMayoreoPesos = $state('0');
@@ -84,11 +86,13 @@
 	let personalizacionPesos = $state('');
 	let envioPesos = $state('');
 	let anticipoPesos = $state('');
+	let anticipoManual = $state(false);
 
 	let registrarPagoInicial = $state(false);
 	let pagoInicialTipo = $state<PaymentType>('anticipo');
 	let pagoInicialMonto = $state('');
 	let pagoInicialMetodo = $state('Transferencia');
+	let pagoInicialMetodoOtro = $state('');
 
 	const filteredCustomers = $derived.by(() => {
 		const q = customerSearch.trim().toLowerCase();
@@ -200,6 +204,12 @@
 		Math.max(0, subtotalCents - discountsCents + shippingCents + customCents)
 	);
 	const suggestedDepositCents = $derived(suggestedDeposit(totalCents, data.suggestedPct));
+
+	$effect(() => {
+		if (!anticipoManual) {
+			anticipoPesos = suggestedDepositCents > 0 ? centsToInput(suggestedDepositCents) : '';
+		}
+	});
 
 	const itemsJson = $derived(
 		JSON.stringify(
@@ -474,6 +484,16 @@
 							id="custom_request_type_id"
 							name="custom_request_type_id"
 							bind:value={customRequestTypeId}
+							onchange={() => {
+								if (!encargoPrecioFinalManual) {
+									const rt = data.requestTypes.find((t) => t.id === customRequestTypeId);
+									if (rt?.precio_desde) {
+										encargoPrecioFinal = centsToInput(
+											rt.precio_desde * Math.max(1, Number(encargoCantidad) || 1)
+										);
+									}
+								}
+							}}
 							class={selectClass}
 						>
 							<option value="">Otro / General</option>
@@ -495,6 +515,16 @@
 							min="1"
 							max="999"
 							bind:value={encargoCantidad}
+							oninput={() => {
+								if (!encargoPrecioFinalManual) {
+									const rt = data.requestTypes.find((t) => t.id === customRequestTypeId);
+									if (rt?.precio_desde) {
+										encargoPrecioFinal = centsToInput(
+											rt.precio_desde * Math.max(1, Number(encargoCantidad) || 1)
+										);
+									}
+								}
+							}}
 							required
 							class="min-h-11 tabular-nums"
 						/>
@@ -518,6 +548,7 @@
 							name="precio_final"
 							inputmode="decimal"
 							bind:value={encargoPrecioFinal}
+							oninput={() => (encargoPrecioFinalManual = true)}
 							placeholder="Por cotizar"
 							class="min-h-11 tabular-nums"
 						/>
@@ -777,7 +808,10 @@
 							<button
 								type="button"
 								class="inline-flex items-center gap-1 text-xs text-gold hover:underline"
-								onclick={() => (anticipoPesos = centsToInput(suggestedDepositCents))}
+								onclick={() => {
+									anticipoPesos = centsToInput(suggestedDepositCents);
+									anticipoManual = false;
+								}}
 							>
 								<Sparkles size={13} strokeWidth={1.75} aria-hidden="true" />
 								Usar {data.suggestedPct}% sugerido ({formatMoney(suggestedDepositCents)})
@@ -789,6 +823,7 @@
 						name="anticipo_requerido"
 						inputmode="decimal"
 						bind:value={anticipoPesos}
+						oninput={() => (anticipoManual = true)}
 						placeholder="Sugerido: {centsToInput(suggestedDepositCents)}"
 						class="min-h-11 tabular-nums"
 					/>
@@ -875,6 +910,12 @@
 								name="pago_inicial_monto"
 								inputmode="decimal"
 								bind:value={pagoInicialMonto}
+								oninput={() => {
+									if (estadoInicial !== 'confirmado' && totalCents > 0) {
+										pagoInicialTipo =
+											toCentsSafe(pagoInicialMonto) >= totalCents ? 'liquidacion' : 'anticipo';
+									}
+								}}
 								required={registrarPagoInicial}
 								placeholder={anticipoPesos || centsToInput(suggestedDepositCents)}
 								class="min-h-11 tabular-nums"
@@ -910,14 +951,26 @@
 
 						<div class="flex flex-col gap-1.5 sm:col-span-2">
 							<Label for="pago_inicial_metodo">Método de pago</Label>
-							<Input
+							<select
 								id="pago_inicial_metodo"
 								name="pago_inicial_metodo"
 								bind:value={pagoInicialMetodo}
-								maxlength={60}
-								placeholder="Transferencia, Efectivo en taller, Depósito…"
-								class="min-h-11"
-							/>
+								class={selectClass}
+							>
+								{#each PAYMENT_METHODS as method (method)}
+									<option value={method}>{method}</option>
+								{/each}
+							</select>
+							{#if pagoInicialMetodo === 'Otro'}
+								<Input
+									id="pago_inicial_metodo_otro"
+									name="pago_inicial_metodo_otro"
+									bind:value={pagoInicialMetodoOtro}
+									maxlength={60}
+									placeholder="Especifica el método de pago…"
+									class="mt-1 min-h-11"
+								/>
+							{/if}
 						</div>
 					</div>
 				{/if}

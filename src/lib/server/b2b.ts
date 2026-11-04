@@ -3,13 +3,17 @@ import {
 	DEFAULT_B2B_PACKAGES,
 	DEFAULT_OUTBOUND_TEMPLATES,
 	parseB2bSettingsRow,
+	sanitizeProspectName,
+	type B2bLogoSurface,
 	type B2bPackage,
 	type B2bPortfolioItem,
+	type B2bProspect,
 	type B2bQuoteData,
 	type B2bSettings
 } from '#lib/domain/b2b.js';
 import { deliveryLabel } from '#lib/domain/checkout.js';
 import { MAX_REFERENCE_IMAGES } from '#lib/domain/custom-request.js';
+import { isSlug, slugify } from '#lib/domain/slug.js';
 import { renderTemplate, whatsappLink } from '#lib/domain/whatsapp.js';
 import type { CustomOrderResult } from './custom-orders.js';
 import { uploadImage } from './imagekit.js';
@@ -121,16 +125,80 @@ export async function loadB2bPublicData(): Promise<PublicB2bLandingData> {
 	return { settings, packages, portfolio };
 }
 
+export type PublicB2bProspectView = {
+	id: string | null;
+	slug: string | null;
+	empresa: string | null;
+	contacto: string | null;
+	packSlug: string | null;
+	nota: string | null;
+	logoUrl: string | null;
+	logoFondoSugerido: B2bLogoSurface;
+};
+
+/**
+ * Resolves a personalized B2B link from either `?p=<slug>` or `?para=<empresa>`.
+ * If a matching active row exists in `b2b_prospects`, enriches the view with its
+ * preloaded logo, contact, recommended package, and custom note; query params can
+ * still override `contacto` or `pack` when explicitly provided.
+ */
+export async function resolvePublicB2bProspect(url: URL): Promise<PublicB2bProspectView> {
+	const rawSlug = url.searchParams.get('p')?.trim() ?? '';
+	const rawEmpresa = sanitizeProspectName(url.searchParams.get('para'), 80);
+	const rawContacto = sanitizeProspectName(url.searchParams.get('contacto'), 60);
+	const rawPack = url.searchParams.get('pack')?.trim() ?? '';
+	const queryPackSlug = rawPack && isSlug(rawPack) ? rawPack : null;
+
+	const lookupSlug = rawSlug && isSlug(rawSlug) ? rawSlug : rawEmpresa ? slugify(rawEmpresa) : null;
+
+	if (lookupSlug && isSlug(lookupSlug)) {
+		const { data: row } = await publicDb()
+			.from('b2b_prospects')
+			.select('*')
+			.eq('slug', lookupSlug)
+			.eq('activo', true)
+			.maybeSingle();
+
+		if (row) {
+			const version = Date.parse(row.updated_at) || 1;
+			const logoFondoSugerido: B2bLogoSurface =
+				row.logo_fondo_sugerido === 'light' ? 'light' : 'dark';
+			return {
+				id: row.id,
+				slug: row.slug,
+				empresa: row.empresa,
+				contacto: rawContacto ?? row.contacto,
+				packSlug: queryPackSlug ?? row.paquete_slug,
+				nota: row.nota,
+				logoUrl: row.logo_imagekit_path ? `/img/b2b/prospect/${row.id}?w=800&v=${version}` : null,
+				logoFondoSugerido
+			};
+		}
+	}
+
+	return {
+		id: null,
+		slug: null,
+		empresa: rawEmpresa,
+		contacto: rawContacto,
+		packSlug: queryPackSlug,
+		nota: null,
+		logoUrl: null,
+		logoFondoSugerido: 'dark'
+	};
+}
+
 export type AdminB2bData = {
 	migrationReady: boolean;
 	settings: B2bSettings;
 	packages: (B2bPackage & { version: number })[];
 	portfolio: (B2bPortfolioItem & { version: number })[];
+	prospects: (B2bProspect & { version: number })[];
 	templates: { clave: string; nombre: string; cuerpo: string }[];
 };
 
 export async function loadB2bAdminData(): Promise<AdminB2bData> {
-	const [settingsRes, packagesRes, portfolioRes, templatesRes] = await Promise.all([
+	const [settingsRes, packagesRes, portfolioRes, prospectsRes, templatesRes] = await Promise.all([
 		supabaseAdmin.from('b2b_settings').select('*').eq('id', 1).maybeSingle(),
 		supabaseAdmin
 			.from('b2b_packages')
@@ -142,6 +210,7 @@ export async function loadB2bAdminData(): Promise<AdminB2bData> {
 			.select('*')
 			.order('orden', { ascending: true })
 			.order('created_at', { ascending: false }),
+		supabaseAdmin.from('b2b_prospects').select('*').order('updated_at', { ascending: false }),
 		supabaseAdmin
 			.from('wa_templates')
 			.select('clave, nombre, cuerpo')
@@ -166,6 +235,14 @@ export async function loadB2bAdminData(): Promise<AdminB2bData> {
 		})
 	);
 
+	const prospects: (B2bProspect & { version: number })[] = (
+		!prospectsRes.error && prospectsRes.data ? prospectsRes.data : []
+	).map((item) => ({
+		...item,
+		logo_fondo_sugerido: item.logo_fondo_sugerido === 'light' ? 'light' : 'dark',
+		version: Date.parse(item.updated_at) || 1
+	}));
+
 	const templates =
 		templatesRes.data && templatesRes.data.length > 0
 			? templatesRes.data
@@ -176,6 +253,7 @@ export async function loadB2bAdminData(): Promise<AdminB2bData> {
 		settings,
 		packages,
 		portfolio,
+		prospects,
 		templates
 	};
 }
@@ -186,7 +264,8 @@ export async function loadB2bAdminData(): Promise<AdminB2bData> {
  */
 export async function placeB2bQuoteOrder(
 	quote: B2bQuoteData,
-	files: File[]
+	files: File[],
+	prospectSlug?: string | null
 ): Promise<CustomOrderResult> {
 	if (files.length > MAX_REFERENCE_IMAGES) {
 		return {
@@ -238,6 +317,21 @@ export async function placeB2bQuoteOrder(
 			);
 		} catch {
 			// Reported below through `referencias`.
+		}
+	}
+
+	if (paths.length === 0) {
+		const candidateSlug =
+			prospectSlug && isSlug(prospectSlug) ? prospectSlug : slugify(quote.empresa);
+		if (candidateSlug && isSlug(candidateSlug)) {
+			const { data: prospect } = await supabaseAdmin
+				.from('b2b_prospects')
+				.select('logo_imagekit_path')
+				.eq('slug', candidateSlug)
+				.maybeSingle();
+			if (prospect?.logo_imagekit_path) {
+				paths.push(prospect.logo_imagekit_path);
+			}
 		}
 	}
 

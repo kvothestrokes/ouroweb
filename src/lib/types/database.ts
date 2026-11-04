@@ -117,6 +117,51 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			b2b_prospects: {
+				Row: {
+					activo: boolean;
+					contacto: string | null;
+					created_at: string;
+					empresa: string;
+					id: string;
+					logo_fondo_sugerido: string;
+					logo_imagekit_path: string | null;
+					nota: string | null;
+					paquete_slug: string | null;
+					slug: string;
+					updated_at: string;
+					whatsapp: string | null;
+				};
+				Insert: {
+					activo?: boolean;
+					contacto?: string | null;
+					created_at?: string;
+					empresa: string;
+					id?: string;
+					logo_fondo_sugerido?: string;
+					logo_imagekit_path?: string | null;
+					nota?: string | null;
+					paquete_slug?: string | null;
+					slug: string;
+					updated_at?: string;
+					whatsapp?: string | null;
+				};
+				Update: {
+					activo?: boolean;
+					contacto?: string | null;
+					created_at?: string;
+					empresa?: string;
+					id?: string;
+					logo_fondo_sugerido?: string;
+					logo_imagekit_path?: string | null;
+					nota?: string | null;
+					paquete_slug?: string | null;
+					slug?: string;
+					updated_at?: string;
+					whatsapp?: string | null;
+				};
+				Relationships: [];
+			};
 			b2b_settings: {
 				Row: {
 					badge_texto: string;
@@ -294,32 +339,41 @@ export type Database = {
 				Row: {
 					archivos_referencia: string[];
 					cantidad: number;
+					color: string | null;
 					custom_request_type_id: string | null;
 					descripcion: string;
+					desglose_tallas: Json;
 					fecha_deseada: string | null;
 					id: string;
 					order_id: string;
 					precio_final: number | null;
+					tipo_producto: string | null;
 				};
 				Insert: {
 					archivos_referencia?: string[];
 					cantidad?: number;
+					color?: string | null;
 					custom_request_type_id?: string | null;
 					descripcion: string;
+					desglose_tallas?: Json;
 					fecha_deseada?: string | null;
 					id?: string;
 					order_id: string;
 					precio_final?: number | null;
+					tipo_producto?: string | null;
 				};
 				Update: {
 					archivos_referencia?: string[];
 					cantidad?: number;
+					color?: string | null;
 					custom_request_type_id?: string | null;
 					descripcion?: string;
+					desglose_tallas?: Json;
 					fecha_deseada?: string | null;
 					id?: string;
 					order_id?: string;
 					precio_final?: number | null;
+					tipo_producto?: string | null;
 				};
 				Relationships: [
 					{
@@ -1180,10 +1234,13 @@ export type Database = {
 			admin_update_custom_request: {
 				Args: {
 					p_cantidad: number;
+					p_color?: string | null;
 					p_custom_request_type_id: string | null;
 					p_descripcion: string;
+					p_desglose_tallas?: Json;
 					p_fecha_deseada: string | null;
 					p_order_id: string;
+					p_tipo_producto?: string | null;
 				};
 				Returns: undefined;
 			};

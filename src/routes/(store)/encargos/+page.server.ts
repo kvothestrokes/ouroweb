@@ -3,12 +3,16 @@ import { customRequestFromForm } from '#lib/domain/custom-request.js';
 import { placeCustomOrder } from '#lib/server/custom-orders.js';
 import { allowDurable } from '#lib/server/durable-rate-limit.js';
 import { allowRequest } from '#lib/server/rate-limit.js';
-import { loadCustomRequestTypes, storeData } from '#lib/server/store.js';
+import { loadCustomRequestTypes, loadGarmentOptions, storeData } from '#lib/server/store.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => ({
-	types: await storeData(loadCustomRequestTypes)
-});
+export const load: PageServerLoad = async () => {
+	const [types, garmentOptions] = await Promise.all([
+		storeData(loadCustomRequestTypes),
+		storeData(loadGarmentOptions)
+	]);
+	return { types, garmentOptions };
+};
 
 export const actions = {
 	// Multipart form post: SvelteKit's origin check covers CSRF.

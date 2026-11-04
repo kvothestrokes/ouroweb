@@ -1,10 +1,10 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
-import { b2bPackageFromForm, b2bSettingsFromForm } from '#lib/domain/b2b.js';
+import { b2bPackageFromForm, b2bProspectFromForm, b2bSettingsFromForm } from '#lib/domain/b2b.js';
 import { cleanText } from '#lib/domain/checkout.js';
 import { loadB2bAdminData } from '#lib/server/b2b.js';
 import { deleteImageByPath, signedImageUrl, uploadImage } from '#lib/server/imagekit.js';
-import { preparePhoto } from '#lib/server/product-photos.js';
+import { prepareLogoPhoto, preparePhoto } from '#lib/server/product-photos.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -14,6 +14,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		migrationReady: data.migrationReady,
 		settings: data.settings,
 		templates: data.templates,
+		prospects: data.prospects.map((item) => ({
+			...item,
+			logoSrc: item.logo_imagekit_path
+				? signedImageUrl(item.logo_imagekit_path, [{ width: 320 }])
+				: null
+		})),
 		packages: data.packages.map((pack) => ({
 			...pack,
 			previewSrc: pack.imagekit_path ? signedImageUrl(pack.imagekit_path, [{ width: 400 }]) : null
@@ -198,6 +204,108 @@ export const actions = {
 		});
 		if (error) return fail(400, { message: 'No pudimos guardar la plantilla de prospección.' });
 		return { success: 'Plantilla de prospección guardada.' };
+	},
+
+	guardarProspecto: async ({ request, locals }) => {
+		const form = await request.formData();
+		const idRaw = String(form.get('id') ?? '').trim();
+		const isEdit = idRaw.length > 0 && z.uuid().safeParse(idRaw).success;
+		const removeLogo = form.get('eliminar_logo') === '1';
+
+		const parsed = b2bProspectFromForm(form);
+		if (!parsed.ok) return fail(400, { message: parsed.message });
+
+		let newLogoPath: string | undefined;
+		const logoFile = form.get('logo');
+		if (logoFile instanceof File && logoFile.size > 0) {
+			const prepared = await prepareLogoPhoto(logoFile);
+			if (!prepared.ok) return fail(400, { message: prepared.message });
+			try {
+				newLogoPath = await uploadImage(
+					new File([new Uint8Array(prepared.bytes)], `logo-${parsed.value.slug}.webp`, {
+						type: 'image/webp'
+					}),
+					'gallery',
+					'b2b'
+				);
+			} catch {
+				return fail(503, { message: 'No pudimos subir el logotipo de la empresa.' });
+			}
+		}
+
+		if (isEdit) {
+			const { data: prev } = await locals.supabase
+				.from('b2b_prospects')
+				.select('logo_imagekit_path')
+				.eq('id', idRaw)
+				.maybeSingle();
+
+			const updatePayload = {
+				...parsed.value,
+				...(newLogoPath
+					? { logo_imagekit_path: newLogoPath }
+					: removeLogo
+						? { logo_imagekit_path: null }
+						: {})
+			};
+
+			const { error } = await locals.supabase
+				.from('b2b_prospects')
+				.update(updatePayload)
+				.eq('id', idRaw);
+			if (error) {
+				if (newLogoPath) await deleteImageByPath(newLogoPath);
+				return fail(400, {
+					message:
+						error.code === '23505'
+							? 'Ya existe otra empresa registrada con ese identificador (slug).'
+							: 'No pudimos actualizar los datos de la empresa.'
+				});
+			}
+
+			if ((newLogoPath || removeLogo) && prev?.logo_imagekit_path) {
+				await deleteImageByPath(prev.logo_imagekit_path);
+			}
+			return {
+				success: `Enlace personalizado de ${parsed.value.empresa} actualizado.`,
+				savedProspectSlug: parsed.value.slug
+			};
+		}
+
+		const { error } = await locals.supabase.from('b2b_prospects').insert({
+			...parsed.value,
+			logo_imagekit_path: newLogoPath ?? null
+		});
+		if (error) {
+			if (newLogoPath) await deleteImageByPath(newLogoPath);
+			return fail(400, {
+				message:
+					error.code === '23505'
+						? 'Ya existe una empresa en la lista con ese nombre o identificador. Edítala desde la lista inferior.'
+						: 'No pudimos guardar la empresa. Verifica que la migración B2B esté aplicada.'
+			});
+		}
+
+		return {
+			success: newLogoPath
+				? `Empresa ${parsed.value.empresa} guardada con su logotipo precargado.`
+				: `Empresa ${parsed.value.empresa} agregada a tu lista de enlaces.`,
+			savedProspectSlug: parsed.value.slug
+		};
+	},
+
+	eliminarProspecto: async ({ request, locals }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		if (!z.uuid().safeParse(id).success) return fail(400, { message: 'Revisa el registro.' });
+
+		const { data } = await locals.supabase
+			.from('b2b_prospects')
+			.delete()
+			.eq('id', id)
+			.select('empresa, logo_imagekit_path')
+			.maybeSingle();
+		if (!data) return fail(400, { message: 'No pudimos eliminar la empresa de la lista.' });
+		if (data.logo_imagekit_path) await deleteImageByPath(data.logo_imagekit_path);
+		return { success: `Se eliminó ${data.empresa} de la lista.` };
 	}
 } satisfies Actions;
-
