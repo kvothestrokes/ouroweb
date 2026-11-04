@@ -77,9 +77,9 @@ $$;
 -- 2. Admin create_order (admin_create_order)
 create or replace function public.admin_create_order(
   p_order jsonb,
-  p_quote jsonb,
   p_items jsonb default '[]'::jsonb,
   p_request jsonb default null,
+  p_payment jsonb default null,
   p_fecha timestamptz default now()
 )
 returns jsonb
@@ -90,166 +90,158 @@ declare
   v_folio text;
   v_order_id uuid;
   v_tipo public.order_type;
+  v_estado public.order_status;
+  v_metodo public.delivery_method;
+  v_direccion jsonb;
   v_subtotal integer := 0;
-  v_desc_mayoreo integer := 0;
-  v_desc_cupon integer := 0;
+  v_desc_mayoreo integer;
+  v_desc_cupon integer;
   v_personalizacion integer;
   v_envio integer;
+  v_anticipo integer;
   v_total integer;
-  v_anticipo_requerido integer;
   v_precio_final integer;
-  v_item jsonb;
   v_pago_tipo public.payment_type;
   v_pago_monto integer;
   v_pago_metodo text;
-  v_estado public.order_status := 'pendiente';
 begin
   perform public.assert_order_admin();
 
-  v_tipo := (p_order ->> 'tipo')::public.order_type;
-  if v_tipo is null or v_tipo not in ('catalogo', 'encargo') then
-    raise exception 'invalid_order_type' using errcode = '22023';
-  end if;
+  v_tipo := coalesce((p_order ->> 'tipo')::public.order_type, 'catalogo');
+  v_estado := coalesce((p_order ->> 'estado')::public.order_status, 'pendiente');
+  v_metodo := (p_order ->> 'metodo_entrega')::public.delivery_method;
+  v_direccion := case
+    when v_metodo = 'recoger' then null
+    when jsonb_typeof(p_order -> 'direccion') = 'object' then p_order -> 'direccion'
+    else null
+  end;
 
-  if length(trim(coalesce(p_order ->> 'cliente_nombre', ''))) = 0
-     or length(trim(coalesce(p_order ->> 'cliente_whatsapp', ''))) = 0 then
-    raise exception 'invalid_customer_data' using errcode = '22023';
-  end if;
-
-  if (p_order ->> 'metodo_entrega') not in ('recoger', 'domicilio', 'paqueteria') then
-    raise exception 'invalid_delivery_method' using errcode = '22023';
-  end if;
-
-  if (p_order ->> 'metodo_entrega') in ('domicilio', 'paqueteria')
-     and (p_order -> 'direccion' is null or jsonb_typeof(p_order -> 'direccion') <> 'object') then
+  if v_metodo <> 'recoger' and v_direccion is null then
     raise exception 'address_required' using errcode = '22023';
   end if;
 
-  v_desc_mayoreo := coalesce((p_quote ->> 'desc_mayoreo')::integer, 0);
-  v_desc_cupon := coalesce((p_quote ->> 'desc_cupon')::integer, 0);
-  v_personalizacion := (p_quote ->> 'personalizacion')::integer;
-  v_anticipo_requerido := (p_quote ->> 'anticipo_requerido')::integer;
-
-  if (p_order ->> 'metodo_entrega') = 'recoger' then
-    v_envio := 0;
-  else
-    v_envio := (p_quote ->> 'envio')::integer;
-  end if;
-
-  if v_desc_mayoreo < 0 or v_desc_cupon < 0
-     or coalesce(v_personalizacion, 0) < 0
-     or coalesce(v_envio, 0) < 0
-     or coalesce(v_anticipo_requerido, 0) < 0 then
-    raise exception 'invalid_amount' using errcode = '22023';
+  if v_estado not in ('pendiente', 'esperando_anticipo', 'confirmado') then
+    raise exception 'invalid_transition' using errcode = '22023';
   end if;
 
   if v_tipo = 'catalogo' then
-    if jsonb_array_length(p_items) = 0 then
-      raise exception 'empty_order' using errcode = '22023';
+    if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+      raise exception 'order without items' using errcode = '22023';
     end if;
 
-    for v_item in select * from jsonb_array_elements(p_items)
-    loop
-      if coalesce((v_item ->> 'cantidad')::integer, 0) <= 0
-         or coalesce((v_item ->> 'precio_unitario')::integer, 0) < 0
-         or coalesce((v_item ->> 'recargo_talla')::integer, 0) < 0 then
-        raise exception 'invalid_amount' using errcode = '22023';
-      end if;
+    if exists (
+      select 1
+      from jsonb_array_elements(p_items) as item
+      where coalesce((item ->> 'cantidad')::integer, 0) <= 0
+         or coalesce((item ->> 'precio_unitario')::integer, -1) < 0
+         or coalesce((item ->> 'recargo_talla')::integer, 0) < 0
+         or length(trim(coalesce(item ->> 'nombre_snapshot', ''))) = 0
+    ) then
+      raise exception 'invalid_amount' using errcode = '22023';
+    end if;
 
-      v_subtotal := v_subtotal + (
-        ((v_item ->> 'precio_unitario')::integer + (v_item ->> 'recargo_talla')::integer)
-        * (v_item ->> 'cantidad')::integer
-      );
-    end loop;
+    select coalesce(sum(
+      ((item ->> 'precio_unitario')::integer + coalesce((item ->> 'recargo_talla')::integer, 0))
+      * (item ->> 'cantidad')::integer
+    ), 0)
+    into v_subtotal
+    from jsonb_array_elements(p_items) as item;
   else
-    if p_request is null or jsonb_typeof(p_request) <> 'object'
+    if jsonb_typeof(p_request) <> 'object'
        or length(trim(coalesce(p_request ->> 'descripcion', ''))) = 0
-       or coalesce((p_request ->> 'cantidad')::integer, 0) <= 0 then
-      raise exception 'invalid_custom_request' using errcode = '22023';
+       or coalesce((p_request ->> 'cantidad')::integer, 1) <= 0 then
+      raise exception 'request_not_found' using errcode = '22023';
     end if;
-
     v_precio_final := (p_request ->> 'precio_final')::integer;
-    if v_precio_final is not null and v_precio_final < 0 then
+    if coalesce(v_precio_final, 0) < 0 then
       raise exception 'invalid_amount' using errcode = '22023';
     end if;
     v_subtotal := coalesce(v_precio_final, 0);
   end if;
 
-  if (v_desc_mayoreo + v_desc_cupon) > v_subtotal then
-    raise exception 'discount_above_price' using errcode = '22023';
-  end if;
+  v_desc_mayoreo := coalesce((p_order ->> 'desc_mayoreo')::integer, 0);
+  v_desc_cupon := coalesce((p_order ->> 'desc_cupon')::integer, 0);
+  v_personalizacion := (p_order ->> 'personalizacion')::integer;
+  v_envio := case when v_metodo = 'recoger' then 0 else (p_order ->> 'envio')::integer end;
+  v_anticipo := (p_order ->> 'anticipo_requerido')::integer;
 
-  v_total := v_subtotal - v_desc_mayoreo - v_desc_cupon + coalesce(v_personalizacion, 0) + coalesce(v_envio, 0);
-  if v_total < 0 then
+  if v_desc_mayoreo < 0 or v_desc_cupon < 0
+     or coalesce(v_personalizacion, 0) < 0 or coalesce(v_envio, 0) < 0
+     or coalesce(v_anticipo, 0) < 0 then
     raise exception 'invalid_amount' using errcode = '22023';
   end if;
 
-  if v_anticipo_requerido is not null and v_anticipo_requerido > v_total then
+  if v_desc_mayoreo + v_desc_cupon > v_subtotal then
+    raise exception 'discount_above_price' using errcode = '22023';
+  end if;
+
+  v_total := v_subtotal - v_desc_mayoreo - v_desc_cupon
+    + coalesce(v_personalizacion, 0) + coalesce(v_envio, 0);
+
+  if v_anticipo is not null and v_anticipo > v_total then
     raise exception 'deposit_above_total' using errcode = '22023';
   end if;
 
-  if p_quote ->> 'pago_tipo' is not null and (p_quote ->> 'pago_monto')::integer > 0 then
-    v_pago_tipo := (p_quote ->> 'pago_tipo')::public.payment_type;
-    v_pago_monto := (p_quote ->> 'pago_monto')::integer;
-    v_pago_metodo := coalesce(p_quote ->> 'pago_metodo', 'Transferencia');
-
+  if jsonb_typeof(p_payment) = 'object' then
+    v_pago_tipo := (p_payment ->> 'tipo')::public.payment_type;
+    v_pago_monto := (p_payment ->> 'monto')::integer;
+    v_pago_metodo := coalesce(nullif(trim(p_payment ->> 'metodo'), ''), 'Sin especificar');
+    if v_pago_monto is null or v_pago_monto <= 0 then
+      raise exception 'invalid_amount' using errcode = '22023';
+    end if;
     if v_pago_monto > v_total then
       raise exception 'payment_exceeds_balance' using errcode = '22023';
     end if;
+  elsif v_estado = 'confirmado' then
+    raise exception 'deposit_required' using errcode = '22023';
   end if;
 
-  if p_quote ->> 'estado_inicial' is not null then
-    v_estado := (p_quote ->> 'estado_inicial')::public.order_status;
-    if v_estado not in ('pendiente', 'esperando_anticipo', 'confirmado') then
-      raise exception 'invalid_status' using errcode = '22023';
-    end if;
-    if v_estado = 'confirmado' and (v_pago_tipo is null or v_pago_tipo <> 'anticipo' or v_pago_monto <= 0) then
-      raise exception 'deposit_required' using errcode = '22023';
-    end if;
+  if v_estado = 'confirmado' and v_pago_tipo is distinct from 'anticipo' then
+    raise exception 'deposit_required' using errcode = '22023';
   end if;
 
-  v_folio := public.next_folio('OUR', coalesce(p_fecha, now()));
+  perform pg_advisory_xact_lock(hashtext('ouroboros:create_order'));
+  v_folio := public.next_folio('OUR', p_fecha);
 
   insert into public.orders (
-    folio, tipo, cliente_nombre, cliente_whatsapp, metodo_entrega, direccion, notas_cliente,
-    subtotal, desc_mayoreo, desc_cupon, personalizacion, envio, total, anticipo_requerido, estado
+    folio, tipo, estado, cliente_nombre, cliente_whatsapp, metodo_entrega, direccion,
+    notas_cliente, subtotal, desc_mayoreo, desc_cupon, personalizacion, envio, total,
+    anticipo_requerido
   ) values (
     v_folio,
     v_tipo,
+    v_estado,
     trim(p_order ->> 'cliente_nombre'),
-    trim(p_order ->> 'cliente_whatsapp'),
-    (p_order ->> 'metodo_entrega')::public.delivery_method,
-    case when jsonb_typeof(p_order -> 'direccion') = 'object' then p_order -> 'direccion' end,
-    coalesce(trim(p_order ->> 'notas_cliente'), ''),
+    p_order ->> 'cliente_whatsapp',
+    v_metodo,
+    v_direccion,
+    coalesce(p_order ->> 'notas_cliente', ''),
     v_subtotal,
     v_desc_mayoreo,
     v_desc_cupon,
     v_personalizacion,
     v_envio,
     v_total,
-    v_anticipo_requerido,
-    v_estado
+    v_anticipo
   )
   returning id into v_order_id;
 
   if v_tipo = 'catalogo' then
-    for v_item in select * from jsonb_array_elements(p_items)
-    loop
-      insert into public.order_items (
-        order_id, product_id, nombre_snapshot, color, talla,
-        cantidad, precio_unitario, recargo_talla, personalizacion_texto
-      ) values (
-        v_order_id,
-        nullif(v_item ->> 'product_id', '')::uuid,
-        coalesce(trim(v_item ->> 'nombre_snapshot'), 'Producto'),
-        nullif(trim(v_item ->> 'color'), ''),
-        nullif(trim(v_item ->> 'talla'), ''),
-        (v_item ->> 'cantidad')::integer,
-        (v_item ->> 'precio_unitario')::integer,
-        coalesce((v_item ->> 'recargo_talla')::integer, 0),
-        nullif(trim(v_item ->> 'personalizacion_texto'), '')
-      );
-    end loop;
+    insert into public.order_items (
+      order_id, product_id, nombre_snapshot, color, talla, cantidad, precio_unitario,
+      recargo_talla, personalizacion_texto
+    )
+    select
+      v_order_id,
+      nullif(item ->> 'product_id', '')::uuid,
+      trim(item ->> 'nombre_snapshot'),
+      nullif(trim(coalesce(item ->> 'color', '')), ''),
+      nullif(trim(coalesce(item ->> 'talla', '')), ''),
+      (item ->> 'cantidad')::integer,
+      (item ->> 'precio_unitario')::integer,
+      coalesce((item ->> 'recargo_talla')::integer, 0),
+      nullif(trim(coalesce(item ->> 'personalizacion_texto', '')), '')
+    from jsonb_array_elements(p_items) as item;
   else
     insert into public.custom_requests (
       order_id, custom_request_type_id, descripcion, cantidad, fecha_deseada, precio_final,
@@ -283,6 +275,9 @@ begin
   return jsonb_build_object('id', v_order_id, 'folio', v_folio);
 end;
 $$;
+
+revoke all on function public.admin_create_order(jsonb, jsonb, jsonb, jsonb, timestamptz) from public, anon, authenticated;
+grant execute on function public.admin_create_order(jsonb, jsonb, jsonb, jsonb, timestamptz) to service_role;
 
 -- 3. Admin update_custom_request (admin_update_custom_request)
 drop function if exists public.admin_update_custom_request(uuid, uuid, text, integer, date);
