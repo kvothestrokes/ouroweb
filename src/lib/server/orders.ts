@@ -21,16 +21,18 @@ export type OrderResult =
 	{ ok: true; order: PlacedOrder } | { ok: false; status: 400 | 429 | 503; message: string };
 
 // Used only if the `pedido_nuevo` template row is missing (spec section 8).
-const FALLBACK_TEMPLATE = `¡Hola, Ouroboros! 🐍✨
+const FALLBACK_TEMPLATE = `¡Hola!
 Acabo de hacer mi pedido *{{folio}}*
 
-👤 {{nombre}}
-📦 Entrega: {{metodo_entrega}}
+Cliente: {{nombre}}
+Entrega: {{metodo_entrega}}
 
 {{resumen}}
 
 Subtotal: {{subtotal}}
-Envío y personalización: por cotizar`;
+Envío y personalización: Por cotizar
+
+Quedo al pendiente de la cotización final y los datos para el anticipo. ¡Gracias!`;
 
 async function orderTemplate(): Promise<string> {
 	const { data } = await supabaseAdmin

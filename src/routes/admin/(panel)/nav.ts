@@ -1,6 +1,7 @@
 import type { RouteId } from '$app/types';
 import {
 	type LucideIcon,
+	Building2,
 	FolderTree,
 	House,
 	Images,
@@ -72,6 +73,12 @@ export const NAV: NavItem[] = [
 		label: 'Tipos de encargo',
 		icon: Sparkles,
 		route: '/admin/(panel)/tipos-de-encargo'
+	},
+	{
+		path: '/admin/empresas',
+		label: 'Empresas (B2B)',
+		icon: Building2,
+		route: '/admin/(panel)/empresas'
 	},
 	{ path: '/admin/pedidos', label: 'Pedidos', icon: Layers, route: '/admin/(panel)/pedidos' },
 	{

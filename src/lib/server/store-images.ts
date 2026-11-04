@@ -116,6 +116,29 @@ export async function categoryPhoto(id: string, url: URL): Promise<Buffer> {
 	return watermarked(data.imagen_hero, width);
 }
 
+/** B2B portfolio or corporate package photo configured in `/admin/empresas`. */
+export async function b2bPhoto(id: string, url: URL): Promise<Buffer> {
+	const { data: portfolio } = await publicDb()
+		.from('b2b_portfolio')
+		.select('imagekit_path, updated_at')
+		.eq('id', id)
+		.maybeSingle();
+	if (portfolio?.imagekit_path) {
+		return watermarked(
+			portfolio.imagekit_path,
+			canonicalImageQuery(url, Date.parse(portfolio.updated_at))
+		);
+	}
+
+	const { data: pack } = await publicDb()
+		.from('b2b_packages')
+		.select('imagekit_path, updated_at')
+		.eq('id', id)
+		.maybeSingle();
+	if (!pack?.imagekit_path) error(404, 'No encontrado');
+	return watermarked(pack.imagekit_path, canonicalImageQuery(url, Date.parse(pack.updated_at)));
+}
+
 /**
  * Reviews and gallery photos can be hidden or deleted at any time, so the CDN keeps them
  * for an hour only.

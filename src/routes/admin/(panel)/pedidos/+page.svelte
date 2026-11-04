@@ -2,8 +2,9 @@
 	import { untrack } from 'svelte';
 	import { invalidate } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { BellRing, Search } from '@lucide/svelte';
+	import { BellRing, Plus, Search } from '@lucide/svelte';
 	import OrderStatusBadge from '#lib/components/admin/OrderStatusBadge.svelte';
+	import { DELIVERY_METHODS, deliveryLabel } from '#lib/domain/checkout.js';
 	import { formatMoney } from '#lib/domain/money.js';
 	import { STATUSES, STATUS_LABELS } from '#lib/domain/order-status.js';
 	import type { PageProps } from './$types';
@@ -55,6 +56,13 @@
 			{data.pendientes} pendientes · {data.esperandoAnticipo} esperando anticipo
 		</p>
 	</div>
+	<a
+		href={resolve('/admin/(panel)/pedidos/nuevo')}
+		class="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+	>
+		<Plus size={18} strokeWidth={1.75} aria-hidden="true" />
+		Nuevo pedido manual
+	</a>
 </div>
 
 <div aria-live="polite">
@@ -77,7 +85,7 @@
 
 <form
 	method="GET"
-	class="mt-6 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]"
+	class="mt-6 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto_auto_auto]"
 	data-sveltekit-keepfocus
 >
 	<label class="relative block">
@@ -123,6 +131,34 @@
 			<option value="encargo">Encargos</option>
 		</select>
 	</label>
+	<label>
+		<span class="sr-only">Método de entrega</span>
+		<select
+			name="entrega"
+			value={data.filters.entrega}
+			class={select}
+			onchange={(event) => event.currentTarget.form?.requestSubmit()}
+		>
+			<option value="">Todas las entregas</option>
+			{#each DELIVERY_METHODS as method (method.value)}
+				<option value={method.value}>{method.label}</option>
+			{/each}
+		</select>
+	</label>
+	<label>
+		<span class="sr-only">Estado de pago</span>
+		<select
+			name="pago"
+			value={data.filters.pago}
+			class={select}
+			onchange={(event) => event.currentTarget.form?.requestSubmit()}
+		>
+			<option value="">Todos los saldos</option>
+			<option value="con_saldo">Con saldo pendiente</option>
+			<option value="liquidado">Liquidados</option>
+			<option value="por_cotizar">Por cotizar</option>
+		</select>
+	</label>
 	<button
 		type="submit"
 		class="min-h-11 rounded-md border border-border px-4 text-sm hover:bg-surface-raised"
@@ -135,7 +171,11 @@
 	<p
 		class="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-sm text-muted-foreground"
 	>
-		{data.filters.q || data.filters.estado || data.filters.tipo
+		{data.filters.q ||
+		data.filters.estado ||
+		data.filters.tipo ||
+		data.filters.entrega ||
+		data.filters.pago
 			? 'Ningún pedido coincide con esa búsqueda.'
 			: 'Todavía no hay pedidos. Cuando un cliente haga uno, aparecerá aquí.'}
 	</p>
@@ -162,7 +202,9 @@
 					<span class="min-w-0 truncate text-sm text-foreground">
 						{order.cliente_nombre}
 						<span class="text-muted-foreground">
-							· {order.tipo === 'encargo' ? 'Encargo' : 'Catálogo'}</span
+							· {order.tipo === 'encargo' ? 'Encargo' : 'Catálogo'} · {deliveryLabel(
+								order.metodo_entrega
+							)}</span
 						>
 					</span>
 					<span class="text-xs text-muted-foreground md:text-sm"
@@ -174,6 +216,8 @@
 							<span class="block text-xs text-muted-foreground"
 								>Saldo {formatMoney(order.saldo)}</span
 							>
+						{:else if order.liquidado && order.total > 0}
+							<span class="block text-xs text-success">Liquidado</span>
 						{/if}
 					</span>
 				</a>

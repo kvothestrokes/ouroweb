@@ -2,7 +2,16 @@ import { error, fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { cleanText } from '#lib/domain/checkout.js';
 import { orderBalance, suggestedDeposit } from '#lib/domain/order-money.js';
-import { paymentFromForm, quoteFromForm, templateVariables } from '#lib/domain/order-admin.js';
+import {
+	adminCustomRequestFromForm,
+	orderDetailsFromForm,
+	orderLinesFromForm,
+	overrideStatuses,
+	paymentFromForm,
+	quoteFromForm,
+	statusOverrideFromForm,
+	templateVariables
+} from '#lib/domain/order-admin.js';
 import {
 	STATUSES,
 	nextStatuses,
@@ -18,8 +27,8 @@ const ORDER_SELECT = `
 	id, folio, tipo, estado, cliente_nombre, cliente_whatsapp, metodo_entrega, direccion,
 	notas_cliente, subtotal, desc_mayoreo, desc_cupon, personalizacion, envio, total,
 	anticipo_requerido, guia, created_at,
-	order_items(id, nombre_snapshot, color, talla, cantidad, precio_unitario, recargo_talla, personalizacion_texto),
-	custom_requests(descripcion, cantidad, fecha_deseada, archivos_referencia, precio_final, custom_request_types(nombre, precio_desde)),
+	order_items(id, product_id, nombre_snapshot, color, talla, cantidad, precio_unitario, recargo_talla, personalizacion_texto),
+	custom_requests(custom_request_type_id, descripcion, cantidad, fecha_deseada, archivos_referencia, precio_final, custom_request_types(nombre, precio_desde)),
 	payments(id, tipo, monto, metodo, fecha),
 	order_events(id, estado, nota, fecha),
 	order_notes(id, texto, fecha),
@@ -31,15 +40,31 @@ const thumb = (path: string) => ({
 	full: signedImageUrl(path, [{ width: 1600 }])
 });
 
+const mexicoToday = () =>
+	new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
+
 export const load: PageServerLoad = async ({ locals, params, url }) => {
 	if (!z.uuid().safeParse(params.id).success) error(404, 'Pedido no encontrado');
-	const [{ data: order }, { data: settings }] = await Promise.all([
-		locals.supabase.from('orders').select(ORDER_SELECT).eq('id', params.id).maybeSingle(),
-		locals.supabase
-			.from('settings')
-			.select('datos_bancarios, direccion_taller, horarios, anticipo_sugerido_pct')
-			.single()
-	]);
+	const [{ data: order }, { data: settings }, { data: products }, { data: requestTypes }] =
+		await Promise.all([
+			locals.supabase.from('orders').select(ORDER_SELECT).eq('id', params.id).maybeSingle(),
+			locals.supabase
+				.from('settings')
+				.select('datos_bancarios, direccion_taller, horarios, anticipo_sugerido_pct')
+				.single(),
+			locals.supabase
+				.from('products')
+				.select(
+					`id, nombre, activo, precio_base, precio_oferta, oferta_hasta,
+					garment_types(nombre, tallas, recargos_talla, precio_normal),
+					product_colors(garment_bases(color_nombre))`
+				)
+				.order('nombre'),
+			locals.supabase
+				.from('custom_request_types')
+				.select('id, nombre, precio_desde, activo')
+				.order('nombre')
+		]);
 	if (!order) error(404, 'Pedido no encontrado');
 
 	const balance = orderBalance(order.total, order.payments);
@@ -52,14 +77,44 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 				.maybeSingle()
 		: { data: null };
 
+	const trackingUrl = `${url.origin}/seguimiento?folio=${order.folio}`;
 	const variables = templateVariables({
 		order,
 		items: order.order_items,
 		pagado: balance.pagado,
 		settings: settings ?? { datos_bancarios: '', direccion_taller: '', horarios: '' },
-		trackingUrl: `${url.origin}/seguimiento?folio=${order.folio}`
+		trackingUrl
 	});
 	const request = order.custom_requests;
+	const today = mexicoToday();
+
+	const catalogProducts = (products ?? []).map((product) => {
+		const gt = product.garment_types;
+		const basePrice = product.precio_base ?? gt?.precio_normal ?? 0;
+		const hasActiveOffer =
+			product.precio_oferta !== null && (!product.oferta_hasta || product.oferta_hasta >= today);
+		const unitPrice = hasActiveOffer ? (product.precio_oferta ?? basePrice) : basePrice;
+		const recargosRaw =
+			gt?.recargos_talla &&
+			typeof gt.recargos_talla === 'object' &&
+			!Array.isArray(gt.recargos_talla)
+				? (gt.recargos_talla as Record<string, number>)
+				: {};
+		const colores = (product.product_colors ?? [])
+			.map((row) => row.garment_bases?.color_nombre)
+			.filter((name): name is string => Boolean(name));
+
+		return {
+			id: product.id,
+			nombre: product.nombre,
+			activo: product.activo,
+			prenda: gt?.nombre ?? null,
+			precio_unitario: unitPrice,
+			tallas: gt?.tallas ?? [],
+			recargos: recargosRaw,
+			colores
+		};
+	});
 
 	return {
 		order: {
@@ -73,6 +128,11 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		balance,
 		suggestedDeposit: suggestedDeposit(order.total, settings?.anticipo_sugerido_pct ?? 50),
 		next: nextStatuses(order.estado, order.metodo_entrega),
+		overrideStatuses: overrideStatuses(order.estado, order.metodo_entrega),
+		trackingUrl,
+		whatsappSummary: variables.resumen,
+		catalogProducts,
+		requestTypes: requestTypes ?? [],
 		notify: templateRow
 			? {
 					nombre: templateRow.nombre,
@@ -85,21 +145,24 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 /** Postgres errors from the order functions, as messages for the admin. */
 const MESSAGES: Record<string, string> = {
-	invalid_transition: 'Ese cambio de estado no está permitido desde el estado actual.',
-	deposit_required: 'Registra primero el pago del anticipo para confirmar el pedido.',
+	invalid_transition: 'Ese cambio de estado no está permitido para este pedido.',
+	deposit_required:
+		'Este estado requiere que el pedido tenga al menos un pago registrado de tipo anticipo.',
 	payment_exceeds_balance: 'El pago es mayor que el saldo pendiente.',
-	order_closed: 'El pedido ya está cerrado.',
-	invalid_amount: 'Revisa los montos: no pueden ser negativos.',
+	order_closed:
+		'El pedido está cerrado (entregado o cancelado). Reabre su estado primero si necesitas modificarlo.',
+	invalid_amount: 'Revisa los montos y cantidades: no pueden ser negativos.',
 	quote_below_paid: 'El nuevo total quedaría por debajo de lo que el cliente ya pagó.',
 	deposit_above_total: 'El anticipo no puede ser mayor que el total.',
-	discount_above_price: 'El precio del encargo no cubre los descuentos del pedido.',
-	request_not_found: 'Este encargo no tiene su descripción; revisa el pedido.'
+	discount_above_price: 'Los descuentos superan el subtotal del pedido.',
+	request_not_found: 'Este encargo no tiene su descripción; revisa el pedido.',
+	address_required: 'Completa la dirección de entrega.',
+	invalid_contact: 'Revisa el nombre y el WhatsApp del cliente.',
+	note_required: 'Escribe el motivo de la corrección de estado.',
+	payment_not_found: 'No encontramos ese pago en el pedido.'
 };
 
 const MAX_FILES = 20;
-
-const mexicoToday = () =>
-	new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
 
 function problem(message: string | undefined, fallback: string) {
 	return fail(400, { message: (message && MESSAGES[message]) ?? fallback });
@@ -116,10 +179,54 @@ export const actions = {
 			p_envio: nullable(input.value.envio),
 			p_personalizacion: nullable(input.value.personalizacion),
 			p_precio_final: nullable(input.value.precio_final),
-			p_anticipo: nullable(input.value.anticipo)
+			p_anticipo: nullable(input.value.anticipo),
+			p_desc_mayoreo: input.value.desc_mayoreo ?? undefined,
+			p_desc_cupon: input.value.desc_cupon ?? undefined
 		});
 		if (rpcError) return problem(rpcError.message, 'No pudimos guardar la cotización.');
-		return { success: 'Cotización guardada.' };
+		return { success: 'Cotización y descuentos guardados.' };
+	},
+
+	datos: async ({ request, locals, params }) => {
+		const input = orderDetailsFromForm(await request.formData());
+		if (!input.ok) return fail(400, { message: input.message });
+		const { error: rpcError } = await locals.supabase.rpc('admin_update_order_details', {
+			p_order_id: params.id,
+			p_cliente_nombre: input.value.cliente_nombre,
+			p_cliente_whatsapp: input.value.cliente_whatsapp,
+			p_metodo_entrega: input.value.metodo_entrega,
+			p_direccion: input.value.direccion,
+			p_notas_cliente: input.value.notas_cliente,
+			p_guia: input.value.guia
+		});
+		if (rpcError) return problem(rpcError.message, 'No pudimos guardar los datos del cliente.');
+		return { success: 'Datos del cliente y entrega actualizados.' };
+	},
+
+	partidas: async ({ request, locals, params }) => {
+		const input = orderLinesFromForm(await request.formData());
+		if (!input.ok) return fail(400, { message: input.message });
+		const { error: rpcError } = await locals.supabase.rpc('admin_save_order_items', {
+			p_order_id: params.id,
+			p_items: input.value.items,
+			p_desc_mayoreo: input.value.desc_mayoreo ?? undefined
+		});
+		if (rpcError) return problem(rpcError.message, 'No pudimos actualizar las partidas.');
+		return { success: 'Partidas y subtotal actualizados.' };
+	},
+
+	encargo: async ({ request, locals, params }) => {
+		const input = adminCustomRequestFromForm(await request.formData());
+		if (!input.ok) return fail(400, { message: input.message });
+		const { error: rpcError } = await locals.supabase.rpc('admin_update_custom_request', {
+			p_order_id: params.id,
+			p_custom_request_type_id: input.value.custom_request_type_id,
+			p_descripcion: input.value.descripcion,
+			p_cantidad: input.value.cantidad,
+			p_fecha_deseada: input.value.fecha_deseada
+		});
+		if (rpcError) return problem(rpcError.message, 'No pudimos actualizar los datos del encargo.');
+		return { success: 'Detalles del encargo actualizados.' };
 	},
 
 	pago: async ({ request, locals, params }) => {
@@ -139,6 +246,17 @@ export const actions = {
 		return { success: 'Pago registrado.' };
 	},
 
+	eliminarPago: async ({ request, locals, params }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		if (!z.uuid().safeParse(id).success) return fail(400, { message: 'Pago no válido.' });
+		const { error: rpcError } = await locals.supabase.rpc('admin_delete_payment', {
+			p_order_id: params.id,
+			p_payment_id: id
+		});
+		if (rpcError) return problem(rpcError.message, 'No pudimos eliminar el pago.');
+		return { success: 'Pago eliminado.' };
+	},
+
 	estado: async ({ request, locals, params }) => {
 		const form = await request.formData();
 		const estado = form.get('estado');
@@ -153,6 +271,27 @@ export const actions = {
 		});
 		if (rpcError) return problem(rpcError.message, 'No pudimos cambiar el estado.');
 		return { success: 'Estado actualizado. Ahora avísale al cliente por WhatsApp.' };
+	},
+
+	revertirEstado: async ({ request, locals, params }) => {
+		const form = await request.formData();
+		const { data: current } = await locals.supabase
+			.from('orders')
+			.select('estado, metodo_entrega')
+			.eq('id', params.id)
+			.maybeSingle();
+		if (!current) return fail(404, { message: 'Pedido no encontrado.' });
+
+		const parsed = statusOverrideFromForm(form, current.estado, current.metodo_entrega);
+		if (!parsed.ok) return fail(400, { message: parsed.message });
+
+		const { error: rpcError } = await locals.supabase.rpc('admin_override_order_status', {
+			p_order_id: params.id,
+			p_estado: parsed.value.estado,
+			p_nota: parsed.value.nota
+		});
+		if (rpcError) return problem(rpcError.message, 'No pudimos corregir el estado del pedido.');
+		return { success: 'Estado corregido y registrado en el historial.' };
 	},
 
 	guia: async ({ request, locals, params }) => {
@@ -179,6 +318,18 @@ export const actions = {
 			.insert({ order_id: params.id, texto });
 		if (insertError) return fail(400, { message: 'No pudimos guardar la nota.' });
 		return { success: 'Nota agregada.' };
+	},
+
+	eliminarNota: async ({ request, locals, params }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		if (!z.uuid().safeParse(id).success) return fail(400, { message: 'Nota no válida.' });
+		const { error: deleteError } = await locals.supabase
+			.from('order_notes')
+			.delete()
+			.eq('id', id)
+			.eq('order_id', params.id);
+		if (deleteError) return fail(400, { message: 'No pudimos eliminar la nota.' });
+		return { success: 'Nota eliminada.' };
 	},
 
 	archivo: async ({ request, locals, params }) => {

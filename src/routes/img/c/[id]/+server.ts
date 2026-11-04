@@ -10,4 +10,3 @@ export const GET: RequestHandler = async ({ params, url, setHeaders }) => {
 	setHeaders(STORE_IMAGE_HEADERS);
 	return new Response(new Uint8Array(webp));
 };
-

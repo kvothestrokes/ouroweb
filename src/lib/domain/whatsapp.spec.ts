@@ -52,6 +52,6 @@ describe('summaryLine', () => {
 				importe: 18000,
 				personalizacion: 'Ana'
 			})
-		).toBe('• 1× Taza — $180.00\n  ✏️ Personalización: Ana (por cotizar)');
+		).toBe('• 1× Taza — $180.00\n  Personalización: Ana (por cotizar)');
 	});
 });

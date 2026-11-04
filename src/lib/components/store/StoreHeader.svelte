@@ -115,6 +115,20 @@
 						Colecciones
 					</a>
 				</li>
+				<li>
+					<a
+						href={resolve('/(store)/empresas')}
+						aria-current={page.route.id?.startsWith('/(store)/empresas') ? 'page' : undefined}
+						class={cn(
+							'inline-flex min-h-11 items-center rounded-md px-2.5 text-sm whitespace-nowrap transition-colors',
+							page.route.id?.startsWith('/(store)/empresas')
+								? 'text-gold'
+								: 'text-muted-foreground hover:text-foreground'
+						)}
+					>
+						Empresas
+					</a>
+				</li>
 			</ul>
 		</nav>
 
@@ -221,6 +235,15 @@
 					class="flex min-h-11 items-center font-display text-base text-foreground hover:text-gold"
 				>
 					Colecciones
+				</a>
+			</li>
+			<li>
+				<a
+					href={resolve('/(store)/empresas')}
+					onclick={() => (menuOpen = false)}
+					class="flex min-h-11 items-center font-display text-base text-foreground hover:text-gold"
+				>
+					Empresas y mayoreo
 				</a>
 			</li>
 		</ul>

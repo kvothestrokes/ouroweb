@@ -58,66 +58,69 @@ on conflict (nombre) do nothing;
 -- WhatsApp templates (spec section 8) ------------------------------------------
 insert into public.wa_templates (clave, nombre, cuerpo) values
   ('pedido_nuevo', 'Pedido nuevo (cliente → negocio)',
-$t$¡Hola, Ouroboros! 🐍✨
+$t$¡Hola!
 Acabo de hacer mi pedido *{{folio}}*
 
-👤 {{nombre}}
-📦 Entrega: {{metodo_entrega}}
+Cliente: {{nombre}}
+Entrega: {{metodo_entrega}}
 
 {{resumen}}
 
 Subtotal: {{subtotal}}
-Envío y personalización: por cotizar
+Envío y personalización: Por cotizar
 
-Quedo pendiente de la cotización final y los datos para el anticipo. ¡Gracias!$t$),
+Quedo al pendiente de la cotización final y los datos para el anticipo. ¡Gracias!$t$),
   ('encargo_nuevo', 'Encargo nuevo (cliente → negocio)',
-$t$¡Hola, Ouroboros! 🐍✨
+$t$¡Hola!
 Acabo de enviar mi encargo especial *{{folio}}*
 
-👤 {{nombre}}
-📦 Entrega: {{metodo_entrega}}
+Cliente: {{nombre}}
+Entrega: {{metodo_entrega}}
 
 {{resumen}}
 
-Quedo pendiente de la cotización. ¡Gracias!$t$),
+Quedo al pendiente de la cotización. ¡Gracias!$t$),
   ('cotizacion_anticipo', 'Cotización y anticipo',
-$t$¡Hola, {{nombre}}! 🐍 Gracias por tu pedido *{{folio}}*
+$t$¡Hola, {{nombre}}! Gracias por tu pedido *{{folio}}*.
 
 Total: {{total}} (incluye envío: {{envio}})
-Para iniciar la producción necesitamos un anticipo de *{{anticipo}}*.
+Para iniciar la producción requerimos un anticipo de *{{anticipo}}*.
 
 {{datos_bancarios}}
 
-Mándanos tu comprobante por aquí y lo ponemos en marcha 🎨
-Sigue tu pedido aquí: {{link_seguimiento}}$t$),
+Por favor envíanos tu comprobante por este medio para comenzar.
+Seguimiento de tu pedido: {{link_seguimiento}}$t$),
   ('anticipo_recibido', 'Anticipo recibido',
-$t$¡Hola, {{nombre}}! 🐍 Recibimos tu anticipo de {{pagado}} para el pedido *{{folio}}*.
+$t$¡Hola, {{nombre}}! Recibimos tu anticipo de {{pagado}} para el pedido *{{folio}}*.
 
-Tu pedido ya está confirmado. Saldo pendiente: {{saldo}}.
-Sigue tu pedido aquí: {{link_seguimiento}}$t$),
+Tu pedido está confirmado. Saldo pendiente: {{saldo}}.
+Seguimiento de tu pedido: {{link_seguimiento}}$t$),
   ('en_produccion', 'En producción',
-$t$¡Hola, {{nombre}}! 🎨 Tu pedido *{{folio}}* ya está en producción.
+$t$¡Hola, {{nombre}}! Tu pedido *{{folio}}* ya se encuentra en producción.
 
-Te avisamos en cuanto esté listo.
-Sigue tu pedido aquí: {{link_seguimiento}}$t$),
+Te avisaremos en cuanto esté listo.
+Seguimiento de tu pedido: {{link_seguimiento}}$t$),
   ('listo_recoger', 'Listo para recoger',
-$t$¡Hola, {{nombre}}! 🐍 Tu pedido *{{folio}}* está listo para recoger.
+$t$¡Hola, {{nombre}}! Tu pedido *{{folio}}* está listo para ser recogido en el taller.
 
-📍 {{direccion_taller}}
+Dirección de entrega:
+{{direccion_taller}}
+
 Saldo pendiente: {{saldo}}
 
 ¡Te esperamos!$t$),
   ('enviado', 'Enviado',
-$t$¡Hola, {{nombre}}! 📦 Tu pedido *{{folio}}* ya va en camino.
+$t$¡Hola, {{nombre}}! Tu pedido *{{folio}}* ya va en camino.
 
-Guía: {{guia}}
-Sigue tu pedido aquí: {{link_seguimiento}}$t$),
+Número de guía de envío: {{guia}}
+Seguimiento de tu pedido: {{link_seguimiento}}$t$),
   ('entregado_resena', 'Entregado y reseña',
-$t$¡Hola, {{nombre}}! 🐍✨ Tu pedido *{{folio}}* fue entregado. ¡Gracias por tu compra!
+$t$¡Hola, {{nombre}}! Tu pedido *{{folio}}* ha sido entregado. Muchas gracias por tu compra.
 
-Nos encantaría saber qué te pareció. Déjanos tu reseña con foto aquí: {{link_seguimiento}}$t$),
+Nos encantaría conocer tu opinión. Puedes dejarnos tu reseña aquí: {{link_seguimiento}}$t$),
   ('cancelado', 'Cancelado',
-$t$Hola, {{nombre}}. Tu pedido *{{folio}}* fue cancelado.
+$t$Hola, {{nombre}}. Tu pedido *{{folio}}* ha sido cancelado.
 
-Si tienes dudas, escríbenos por aquí y con gusto te ayudamos.$t$)
+Motivo: {{motivo}}
+Si tienes alguna duda o deseas realizar un nuevo pedido, con gusto te atendemos por este medio.$t$)
 on conflict (clave) do nothing;

@@ -28,6 +28,6 @@ export function summaryLine(item: SummaryItem): string {
 	const name = [item.nombre, item.color, item.talla].filter(Boolean).join(' · ');
 	const line = `• ${item.cantidad}× ${name} — ${formatMoney(item.importe)}`;
 	return item.personalizacion
-		? `${line}\n  ✏️ Personalización: ${item.personalizacion} (por cotizar)`
+		? `${line}\n  Personalización: ${item.personalizacion} (por cotizar)`
 		: line;
 }

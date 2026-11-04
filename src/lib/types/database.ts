@@ -33,6 +33,132 @@ export type Database = {
 	};
 	public: {
 		Tables: {
+			b2b_packages: {
+				Row: {
+					activo: boolean;
+					cantidad_minima: number;
+					created_at: string;
+					descripcion: string;
+					destacado: boolean;
+					id: string;
+					imagekit_path: string | null;
+					incluye: string[];
+					nombre: string;
+					orden: number;
+					precio_desde: number;
+					slug: string;
+					subtitulo: string;
+					updated_at: string;
+				};
+				Insert: {
+					activo?: boolean;
+					cantidad_minima?: number;
+					created_at?: string;
+					descripcion?: string;
+					destacado?: boolean;
+					id?: string;
+					imagekit_path?: string | null;
+					incluye?: string[];
+					nombre: string;
+					orden?: number;
+					precio_desde: number;
+					slug: string;
+					subtitulo?: string;
+					updated_at?: string;
+				};
+				Update: {
+					activo?: boolean;
+					cantidad_minima?: number;
+					created_at?: string;
+					descripcion?: string;
+					destacado?: boolean;
+					id?: string;
+					imagekit_path?: string | null;
+					incluye?: string[];
+					nombre?: string;
+					orden?: number;
+					precio_desde?: number;
+					slug?: string;
+					subtitulo?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			b2b_portfolio: {
+				Row: {
+					activo: boolean;
+					created_at: string;
+					giro_empresa: string;
+					id: string;
+					imagekit_path: string;
+					orden: number;
+					titulo: string;
+					updated_at: string;
+				};
+				Insert: {
+					activo?: boolean;
+					created_at?: string;
+					giro_empresa?: string;
+					id?: string;
+					imagekit_path: string;
+					orden?: number;
+					titulo: string;
+					updated_at?: string;
+				};
+				Update: {
+					activo?: boolean;
+					created_at?: string;
+					giro_empresa?: string;
+					id?: string;
+					imagekit_path?: string;
+					orden?: number;
+					titulo?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			b2b_settings: {
+				Row: {
+					badge_texto: string;
+					escalas_simulador: Json;
+					faqs: Json;
+					garantias: Json;
+					hero_subtitulo: string;
+					hero_titulo: string;
+					id: number;
+					stat_minimo_piezas: string;
+					stat_piezas_entregadas: string;
+					stat_tiempo_respuesta: string;
+					updated_at: string;
+				};
+				Insert: {
+					badge_texto?: string;
+					escalas_simulador?: Json;
+					faqs?: Json;
+					garantias?: Json;
+					hero_subtitulo?: string;
+					hero_titulo?: string;
+					id?: number;
+					stat_minimo_piezas?: string;
+					stat_piezas_entregadas?: string;
+					stat_tiempo_respuesta?: string;
+					updated_at?: string;
+				};
+				Update: {
+					badge_texto?: string;
+					escalas_simulador?: Json;
+					faqs?: Json;
+					garantias?: Json;
+					hero_subtitulo?: string;
+					hero_titulo?: string;
+					id?: number;
+					stat_minimo_piezas?: string;
+					stat_piezas_entregadas?: string;
+					stat_tiempo_respuesta?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
 			categories: {
 				Row: {
 					activo: boolean;
@@ -1018,6 +1144,61 @@ export type Database = {
 				};
 				Returns: string;
 			};
+			admin_create_order: {
+				Args: {
+					p_fecha?: string;
+					p_items?: Json;
+					p_order: Json;
+					p_payment?: Json;
+					p_request?: Json;
+				};
+				Returns: Json;
+			};
+			admin_delete_payment: {
+				Args: {
+					p_order_id: string;
+					p_payment_id: string;
+				};
+				Returns: undefined;
+			};
+			admin_override_order_status: {
+				Args: {
+					p_estado: Database['public']['Enums']['order_status'];
+					p_nota: string;
+					p_order_id: string;
+				};
+				Returns: undefined;
+			};
+			admin_save_order_items: {
+				Args: {
+					p_desc_mayoreo?: number;
+					p_items: Json;
+					p_order_id: string;
+				};
+				Returns: undefined;
+			};
+			admin_update_custom_request: {
+				Args: {
+					p_cantidad: number;
+					p_custom_request_type_id: string | null;
+					p_descripcion: string;
+					p_fecha_deseada: string | null;
+					p_order_id: string;
+				};
+				Returns: undefined;
+			};
+			admin_update_order_details: {
+				Args: {
+					p_cliente_nombre: string;
+					p_cliente_whatsapp: string;
+					p_direccion: Json;
+					p_guia: string | null;
+					p_metodo_entrega: Database['public']['Enums']['delivery_method'];
+					p_notas_cliente: string;
+					p_order_id: string;
+				};
+				Returns: undefined;
+			};
 			assert_order_admin: { Args: never; Returns: undefined };
 			category_is_public: { Args: { p_category_id: string }; Returns: boolean };
 			change_order_status: {
@@ -1055,6 +1236,8 @@ export type Database = {
 			quote_order: {
 				Args: {
 					p_anticipo: number;
+					p_desc_cupon?: number;
+					p_desc_mayoreo?: number;
 					p_envio: number;
 					p_order_id: string;
 					p_personalizacion: number;

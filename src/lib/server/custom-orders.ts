@@ -13,15 +13,15 @@ export type PlacedRequest = { folio: string; whatsappUrl: string; referencias: n
 export type CustomOrderResult =
 	{ ok: true; order: PlacedRequest } | { ok: false; status: 400 | 429 | 503; message: string };
 
-const FALLBACK_TEMPLATE = `¡Hola, Ouroboros! 🐍✨
+const FALLBACK_TEMPLATE = `¡Hola!
 Acabo de enviar mi encargo especial *{{folio}}*
 
-👤 {{nombre}}
-📦 Entrega: {{metodo_entrega}}
+Cliente: {{nombre}}
+Entrega: {{metodo_entrega}}
 
 {{resumen}}
 
-Quedo pendiente de la cotización. ¡Gracias!`;
+Quedo al pendiente de la cotización. ¡Gracias!`;
 
 const UNAVAILABLE = 'No pudimos registrar tu encargo. Intenta de nuevo en unos minutos.';
 
@@ -133,14 +133,14 @@ export async function placeCustomOrder(
 		.eq('clave', 'encargo_nuevo')
 		.maybeSingle();
 	const resumen = [
-		`🎨 ${type ? type.nombre : 'Encargo especial'}${type?.precio_desde != null ? ` (desde ${formatMoney(type.precio_desde)})` : ''}`,
+		`Tipo: ${type ? type.nombre : 'Encargo especial'}${type?.precio_desde != null ? ` (desde ${formatMoney(type.precio_desde)})` : ''}`,
 		`Cantidad: ${request.cantidad}`,
-		request.fecha_deseada ? `Lo necesito para: ${formatDate(request.fecha_deseada)}` : null,
-		`\n${request.descripcion}`,
+		request.fecha_deseada ? `Fecha requerida: ${formatDate(request.fecha_deseada)}` : null,
+		`\nDescripción:\n${request.descripcion}`,
 		paths.length
-			? `\n📎 Subí ${paths.length} ${paths.length === 1 ? 'imagen' : 'imágenes'} de referencia.`
+			? `\nArchivos adjuntos: ${paths.length === 1 ? 'Se adjuntó 1 imagen de referencia.' : `Se adjuntaron ${paths.length} imágenes de referencia.`}`
 			: files.length
-				? '\n📎 Te mando mis imágenes de referencia por aquí.'
+				? '\nArchivos adjuntos: Te comparto las imágenes de referencia por este medio.'
 				: null
 	]
 		.filter(Boolean)

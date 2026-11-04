@@ -48,6 +48,14 @@
 						Colecciones
 					</a>
 				</li>
+				<li>
+					<a
+						href={resolve('/(store)/empresas')}
+						class="inline-flex min-h-11 items-center text-foreground/90 hover:text-gold"
+					>
+						Empresas y mayoreo
+					</a>
+				</li>
 			</ul>
 		</nav>
 		<div>

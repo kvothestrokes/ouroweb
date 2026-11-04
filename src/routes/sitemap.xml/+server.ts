@@ -19,6 +19,7 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 		'/colecciones',
 		'/galeria',
 		'/encargos',
+		'/empresas',
 		...categories
 			.flatMap((root) => [root, ...root.children])
 			.map((category) => `/c/${category.slug}`),
